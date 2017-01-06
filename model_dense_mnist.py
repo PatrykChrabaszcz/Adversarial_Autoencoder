@@ -2,10 +2,10 @@ import tensorflow as tf
 from utils import lrelu
 
 
-class ModelDense:
-    def __init__(self, input_shape, z_dim=2, ):
+class ModelDenseMnist:
+    def __init__(self, input_shape, z_dim):
 
-        self.neuron_numbers = [500, 250]
+        self.neuron_numbers = [1000, 1000]
         self.z_dim = z_dim
         self.input_shape = input_shape
 
