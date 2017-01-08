@@ -8,6 +8,13 @@ output/*
 checkpoint*
 train.py_*
 checkpoint*
+x_rec.npy
+xhq_rec.npy
+y.npy
+z.npy
+models/*
+MNIST/*
+CELEB/*
 *___jb_old___
 
 # C extensions
