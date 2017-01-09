@@ -8,7 +8,7 @@ from src.solver import Solver
 import tensorflow as tf
 
 
-model = ModelConvMnist(batch_size=100, z_dim=5, y_dim=10)
+model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=10)
 data = MNIST()
 # Solver
 solver = Solver(model=model)
@@ -20,7 +20,7 @@ saver = tf.train.Saver()
 
 # To restore previous
 print("Restoring model")
-saver.restore(sess, '/home/chrabasp/Workspace/MNIST_AA/models/model_Mnist_Conv.ckpt')
+saver.restore(sess, 'models/model_Mnist_Dense_Momentum.ckpt')
 print("Model restored")
 z = []
 y = []

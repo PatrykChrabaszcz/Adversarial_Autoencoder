@@ -10,6 +10,7 @@ from src.model_celeb_conv import ModelConvCeleb
 from src.datasets import MNIST, CelebA
 from src.solver import Solver
 
+
 def train(model, data, name, restore=False):
     # Solver
     solver = Solver(model=model)
@@ -38,7 +39,7 @@ def train(model, data, name, restore=False):
         for batch_x, batch_y in data.iterate_minibatches(model.batch_size, shuffle=True):
             # Reconstruction update
             l_r, _ = sess.run([solver.rec_loss, solver.rec_optimizer],
-                              feed_dict={solver.x_image: batch_x, solver.rec_lr: 0.0005, solver.y_labels: batch_y})
+                              feed_dict={solver.x_image: batch_x, solver.rec_lr: 0.1, solver.y_labels: batch_y})
             loss_rec_sum += l_r
 
             l_e, l_d = sess.run([solver.enc_loss, solver.disc_loss],
@@ -48,13 +49,13 @@ def train(model, data, name, restore=False):
 
             # Discriminator update (Trick to keep it in balance with encoder
             # log(0.5) = 0.69 (Random guessing)
-            if l_e < 0.85 or l_d > 0.55:
+            if l_e < 0.95 or l_d > 0.45:
                 sess.run([solver.disc_loss, solver.disc_optimizer],
-                         feed_dict={solver.x_image: batch_x, solver.disc_lr: 0.002})
+                         feed_dict={solver.x_image: batch_x, solver.disc_lr: 0.1})
             # Encoder update
-            if l_d < 0.85 or l_e > 0.55:
+            if l_d < 0.95 or l_e > 0.45:
                 sess.run(solver.enc_optimizer,
-                         feed_dict={solver.x_image: batch_x, solver.enc_lr: 0.002})
+                         feed_dict={solver.x_image: batch_x, solver.enc_lr: 0.1})
             if steps % 10 == 0:
                 print("step %d, Current loss: Rec %.4f, Disc %.4f, Enc %.4f" % (steps, l_r, l_d, l_e), end='\r')
             steps += 1
@@ -70,15 +71,15 @@ def train(model, data, name, restore=False):
 
 if __name__ == '__main__':
     scenario = 1
-    y_dim = 10
+    y_dim = None
     if scenario == 1:
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim)
-        data = MNIST()
-        train(model, data, name='Mnist_Dense')
+        data = MNIST(mean=False)
+        train(model, data, name='Mnist_Dense_Momentum_noy', restore=False)
     if scenario == 2:
-        model = ModelConvMnist(batch_size=100, z_dim=5, y_dim=y_dim)
-        data = MNIST()
-        train(model, data, name='Mnist_Conv')
+        model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim)
+        data = MNIST(mean=False)
+        train(model, data, name='Mnist_Conv_Momentum')
     if scenario == 3:
         model = ModelHqMnist(batch_size=1, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)

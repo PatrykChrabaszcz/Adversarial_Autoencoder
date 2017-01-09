@@ -29,9 +29,8 @@ class Solver:
         t_vars = tf.trainable_variables()
         rec_vars = [var for var in t_vars if 'dec' or 'enc' in var.name]
 
-        self.rec_optimizer = tf.train.MomentumOptimizer(learning_rate=self.rec_lr,momentum=0.9).\
+        self.rec_optimizer = tf.train.MomentumOptimizer(learning_rate=self.rec_lr, momentum=0.9).\
             minimize(self.rec_loss, var_list=rec_vars)
-
         # Discriminator
         self.y_pred_sam = model.discriminator(self.z_sampled)
         self.y_pred_enc = model.discriminator(self.z_encoded, reuse=True)
@@ -43,8 +42,11 @@ class Solver:
 
         t_vars = tf.trainable_variables()
         disc_vars = [var for var in t_vars if 'disc' in var.name]
-        self.disc_optimizer = tf.train.AdamOptimizer(learning_rate=self.disc_lr).\
+        # self.disc_optimizer = tf.train.tf.train.AdamOptimizer(learning_rate=self.disc_lr).\
+        #     minimize(self.disc_loss, var_list=disc_vars)
+        self.disc_optimizer = tf.train.MomentumOptimizer(learning_rate=self.disc_lr, momentum=0).\
             minimize(self.disc_loss, var_list=disc_vars)
+
 
         # Encoder
         enc_loss = tf.nn.sigmoid_cross_entropy_with_logits(self.y_pred_enc, tf.ones_like(self.y_pred_enc))
@@ -53,5 +55,7 @@ class Solver:
         t_vars = tf.trainable_variables()
         enc_vars = [var for var in t_vars if 'enc' in var.name]
 
-        self.enc_optimizer = tf.train.AdamOptimizer(learning_rate=self.enc_lr).\
+        # self.enc_optimizer = tf.train.AdamOptimizer(learning_rate=self.enc_lr).\
+        #     minimize(self.enc_loss, var_list=enc_vars)
+        self.enc_optimizer = tf.train.MomentumOptimizer(learning_rate=self.enc_lr, momentum=0).\
             minimize(self.enc_loss, var_list=enc_vars)
