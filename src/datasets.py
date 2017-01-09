@@ -6,7 +6,6 @@ mnist_path = 'MNIST'
 
 
 class CelebA:
-
     def __init__(self):
         self.train_images = np.float32(np.load(os.path.join(celeb_path, 'train_images_32.npy'))) / 255.0
         self.train_labels = np.uint8(np.load(os.path.join(celeb_path, 'train_labels_32.npy')))
@@ -38,13 +37,26 @@ class CelebA:
 
 
 class MNIST:
-
-    def __init__(self):
+    def __init__(self, mean=True):
         data = self.load_dataset()
-        self.train_images = data['x_train']
-        self.train_labels = data['y_train']
-        self.test_images = data['x_test']
-        self.test_labels = data['y_test']
+        if mean:
+            self.mean_image = np.mean(data['x_train'], axis=0)
+            self.train_images = data['x_train']-self.mean_image
+            self.test_images = data['x_test']-self.mean_image
+        else:
+            self.mean_image = None
+            self.train_images = data['x_train']
+            self.test_images = data['x_test']
+
+        y_tr = data['y_train']
+        y_te = data['y_test']
+        #One hot
+        y = np.zeros((y_tr.size, 10))
+        y[np.arange(y_tr.size), y_tr] = 1
+        self.train_labels = y
+        y = np.zeros((y_te.size, 10))
+        y[np.arange(y_te.size), y_te] = 1
+        self.test_labels = y
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):
         if test:
@@ -62,8 +74,7 @@ class MNIST:
                 excerpt = indices[start_idx:start_idx + batchsize]
             else:
                 excerpt = slice(start_idx, start_idx + batchsize)
-            yield (
-             inputs[excerpt], targets[excerpt])
+            yield (inputs[excerpt], targets[excerpt])
 
     def load_dataset(self):
         if sys.version_info[0] == 2:
@@ -98,4 +109,4 @@ class MNIST:
         y_test = load_mnist_labels('t10k-labels-idx1-ubyte.gz')
         x_train = np.reshape(x_train, [-1, 784])
         x_test = np.reshape(x_test, [-1, 784])
-        return {'x_train': x_train,'y_train': y_train,'x_test': x_test,'y_test': y_test}
+        return {'x_train': x_train, 'y_train': y_train, 'x_test': x_test, 'y_test': y_test}

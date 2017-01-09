@@ -2,14 +2,14 @@ import tensorflow as tf
 from tensorflow.contrib.layers import batch_norm
 
 
-class ModelConvMnist:
+class ModelConvCeleb:
 
     def __init__(self, batch_size, z_dim, y_dim):
         self.batch_size = batch_size
-        self.input_dim = 784
+        self.input_dim = [32, 32, 3]
         self.z_dim = z_dim
         self.y_dim = y_dim
-        self.x_image = tf.placeholder(tf.float32, [batch_size, self.input_dim], name='x_image')
+        self.x_image = tf.placeholder(tf.float32, [batch_size, 32, 32, 3], name='x_image')
         self.y_labels = tf.placeholder(tf.float32, [batch_size, y_dim], name='y_labels')
         self.bn_settings = {'decay': 0.9,
                             'updates_collections': None,
@@ -17,32 +17,29 @@ class ModelConvMnist:
                             'epsilon': 1e-05}
 
     def encoder(self):
-        # Size of image SxS after i-th convolution (No need to specify for forward pass)
-        # i_s = [28, 14, 7, 3, 1]
-        # Number of features/channels in image after i-th convolution
-        f_n = [1, 32, 64, 128, self.z_dim]
-        # Padding algorithm for i-th convolution
-        padding = ['', 'SAME', 'SAME', 'VALID', 'VALID']
-        # Filter shape for i-th convolution (Not needed to specify for forward pass)
-        # f_s = [_, 3, 3, 3, 3]
+        # Image size in next layers
+        # i_s = [32, 16, 8, 4, 1]
+        # Channels in next layers
+        f_n = [3, 128, 256, 512, self.z_dim]
+        # Filter sizes (3x3xfn[i] for each i-th layer)
+        f_s = [None, 3, 3, 3, 4]
+        padding = [None, 'SAME', 'SAME', 'SAME', 'VALID']
 
-        x_image = tf.reshape(self.x_image, [-1, 28, 28, 1])
-        current_input = x_image
+        current_input = self.x_image
         for i in range(1, len(f_n)):
-            w = tf.get_variable('W_enc_conv%d' % i, shape=[3, 3, f_n[i-1], f_n[i]],
+            w = tf.get_variable('W_enc_conv%d' % i, shape=[f_s[i], f_s[i], f_n[i-1], f_n[i]],
                                 initializer=tf.contrib.layers.xavier_initializer())
             b = tf.get_variable('b_enc_conv%d' % i, shape=[f_n[i]],
                                 initializer=tf.constant_initializer(0))
             current_input = tf.nn.conv2d(current_input, w, strides=[1, 2, 2, 1], padding=padding[i]) + b
-            if i != len(f_n) - 1:
-                current_input = batch_norm(current_input,
-                                           scope=('batch_norm_dec_conv%d' % (i - 1)), **self.bn_settings)
-                current_input = tf.maximum(0.2 * current_input, current_input)
+            current_input = batch_norm(current_input, scope=('batch_norm_enc_conv%d' % i), **self.bn_settings)
+            current_input = tf.maximum(0.2*current_input, current_input)
+            print(current_input.get_shape())
 
         z = tf.reshape(current_input, shape=[self.batch_size, self.z_dim])
         return z
 
-    def decoder(self, z, hq=False, reuse=False):
+    def decoder(self, z, reuse=False, hq=False):
         with tf.variable_scope('decoder') as scope:
             if reuse:
                 scope.reuse_variables()
@@ -54,30 +51,27 @@ class ModelConvMnist:
                 current_input = z
                 input_dim = self.z_dim
 
-            # Image size after i-th deconvolution
-            i_s = [1, 3, 5, 12, 26, 28]
-            # Number of filters/channels in image after i-th deconvolution
-            f_n = [input_dim, 128, 128, 64, 32, 1]
-            # Filter shape for i-th convolution
-            f_s = [None, 3, 3, 4, 4, 3]
-            # Stride value for i-th convolution
-            s_s = [None, 1, 1, 2, 2, 1]
+            i_s = [1, 4, 8, 16, 32]
+            f_n = [input_dim, 512, 256, 128, 3]
+            f_s = [None, 4, 3, 3, 3]
+            padding = [None, 'VALID', 'SAME', 'SAME', 'SAME']
             current_input = tf.reshape(current_input, [self.batch_size, 1, 1, input_dim])
-            for i in range(1, len(f_n)):
-                w = tf.get_variable('W_dec_tconv%d' % i, shape=[f_s[i], f_s[i], f_n[i], f_n[i-1]],
+            for i in range(1, len(i_s)):
+                w = tf.get_variable('W_dec_tconv%d' % i, shape=[f_s[i], f_s[i], f_n[i], f_n[i - 1]],
                                     initializer=tf.contrib.layers.xavier_initializer())
                 b = tf.get_variable('b_dec_tconv%d' % i, shape=f_n[i],
                                     initializer=tf.constant_initializer(0))
                 current_input = tf.nn.conv2d_transpose(current_input, w, [self.batch_size, i_s[i], i_s[i], f_n[i]],
-                                                       strides=[1, s_s[i], s_s[i], 1], padding='VALID')
+                                                       strides=[1, 2, 2, 1], padding=padding[i])
                 current_input = current_input + b
-                if i != len(f_n) - 1:
+                if i != len(i_s) - 1:
                     current_input = batch_norm(current_input,
-                                               scope=('batch_norm_dec_conv%d' % (i-1)), **self.bn_settings)
-                    current_input = tf.maximum(0.2 * current_input, current_input)
+                                               scope=('batch_norm_dec_conv%d' % (i - 1)), **self.bn_settings)
+                    current_input = tf.maximum(0.2*current_input, current_input)
+                print(current_input.get_shape())
 
-            current_input = tf.nn.sigmoid(current_input)
-            y_image = tf.reshape(current_input, shape=[self.batch_size, self.input_dim])
+            current_input = tf.nn.tanh(current_input)
+            y_image = tf.reshape(current_input, shape=[self.batch_size, 32, 32, 3])
             return y_image
 
     def discriminator(self, z, reuse=False):

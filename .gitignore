@@ -8,8 +8,7 @@ output/*
 checkpoint*
 train.py_*
 checkpoint*
-x_rec.npy
-xhq_rec.npy
+x*
 y.npy
 z.npy
 models/*
