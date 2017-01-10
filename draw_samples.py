@@ -1,15 +1,16 @@
 import numpy as np
 
-from src.datasets import MNIST
+from src.datasets import MNIST, CelebA
 from src.model_mnist_dense import ModelDenseMnist
 from src.model_mnist_conv import ModelConvMnist
 from src.model_mnist_hq import ModelHqMnist
+from src.model_celeb_conv import ModelConvCeleb
 from src.solver import Solver
 import tensorflow as tf
 
 
-model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=10)
-data = MNIST()
+model = ModelConvCeleb(batch_size=128, z_dim=25, y_dim=40)
+data = CelebA()
 # Solver
 solver = Solver(model=model)
 # Session
@@ -20,7 +21,7 @@ saver = tf.train.Saver()
 
 # To restore previous
 print("Restoring model")
-saver.restore(sess, 'models/model_Mnist_Dense_Momentum.ckpt')
+saver.restore(sess, 'models/model_Celeb_Conv_Momentum.ckpt')
 print("Model restored")
 z = []
 y = []

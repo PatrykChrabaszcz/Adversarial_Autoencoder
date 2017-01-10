@@ -34,7 +34,6 @@ class ModelConvCeleb:
             current_input = tf.nn.conv2d(current_input, w, strides=[1, 2, 2, 1], padding=padding[i]) + b
             current_input = batch_norm(current_input, scope=('batch_norm_enc_conv%d' % i), **self.bn_settings)
             current_input = tf.maximum(0.2*current_input, current_input)
-            print(current_input.get_shape())
 
         z = tf.reshape(current_input, shape=[self.batch_size, self.z_dim])
         return z
@@ -68,7 +67,6 @@ class ModelConvCeleb:
                     current_input = batch_norm(current_input,
                                                scope=('batch_norm_dec_conv%d' % (i - 1)), **self.bn_settings)
                     current_input = tf.maximum(0.2*current_input, current_input)
-                print(current_input.get_shape())
 
             current_input = tf.nn.tanh(current_input)
             y_image = tf.reshape(current_input, shape=[self.batch_size, 32, 32, 3])

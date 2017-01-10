@@ -3,7 +3,7 @@ from tensorflow.contrib.layers import batch_norm
 
 
 class ModelDenseMnist:
-    def __init__(self, batch_size, z_dim, y_dim=None):
+    def __init__(self, batch_size, z_dim, y_dim=None, is_training = True):
         self.neuron_numbers = [1000, 1000]
         self.batch_size = batch_size
         self.input_dim = 784
@@ -14,7 +14,8 @@ class ModelDenseMnist:
         self.bn_settings = {'decay': 0.9,
                             'updates_collections': None,
                             'scale': True,
-                            'epsilon': 1e-05}
+                            'epsilon': 1e-05,
+                            "is_training": is_training}
 
     def encoder(self):
         current_input = self.x_image
