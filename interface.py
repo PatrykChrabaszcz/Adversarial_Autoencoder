@@ -217,7 +217,7 @@ class Window(QWidget):
         y = np.tile(self.curr_y, [self.batch_size, 1])
 
         x_rec = self.sess.run(self.solver.x_from_z, feed_dict={self.solver.z_provided: z, self.solver.y_labels: y})
-        img = x_rec[1]
+        img = x_rec[0]
         img = np.reshape(img, [28, 28])
         imsave('dec_output.png', img)
         self.l_oimg.setPixmap(QPixmap('dec_output.png').scaled(128, 128))
