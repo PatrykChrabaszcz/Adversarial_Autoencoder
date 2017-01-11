@@ -39,11 +39,12 @@ def train(model, data, name, restore=False):
         for batch_x, batch_y in data.iterate_minibatches(model.batch_size, shuffle=True):
             # Reconstruction update
             l_r, _ = sess.run([solver.rec_loss, solver.rec_optimizer],
-                              feed_dict={solver.x_image: batch_x, solver.rec_lr: 0.01, solver.y_labels: batch_y})
+                              feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.rec_lr: 0.00002})
+            l_r /= model.batch_size
             loss_rec_sum += l_r
 
             l_e, l_d = sess.run([solver.enc_loss, solver.disc_loss],
-                                feed_dict={solver.x_image: batch_x})
+                                feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y})
             loss_enc_sum += l_e
             loss_disc_sum += l_d
 
@@ -51,11 +52,11 @@ def train(model, data, name, restore=False):
             # log(0.5) = 0.69 (Random guessing)
             if l_e < 0.95 or l_d > 0.45:
                 sess.run([solver.disc_loss, solver.disc_optimizer],
-                         feed_dict={solver.x_image: batch_x, solver.disc_lr: 0.01})
+                         feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.disc_lr: 0.00002})
             # Encoder update
             if l_d < 0.95 or l_e > 0.45:
                 sess.run(solver.enc_optimizer,
-                         feed_dict={solver.x_image: batch_x, solver.enc_lr: 0.01})
+                         feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.enc_lr: 0.00002})
             if steps % 10 == 0:
                 print("step %d, Current loss: Rec %.4f, Disc %.4f, Enc %.4f" % (steps, l_r, l_d, l_e), end='\r')
             steps += 1
@@ -70,21 +71,21 @@ def train(model, data, name, restore=False):
 
 
 if __name__ == '__main__':
-    scenario = 2
-    y_dim = None
+    scenario = 4
+    y_dim = 40
     if scenario == 1:
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)
-        train(model, data, name='Mnist_Dense_Momentum_noy', restore=True)
+        train(model, data, name='Mnist_Dense_Adam_noy', restore=False)
     if scenario == 2:
-        model = ModelConvMnist(batch_size=100, z_dim=5, y_dim=y_dim)
+        model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)
-        train(model, data, name='Mnist_Conv_Momentum_noy', restore=True)
+        train(model, data, name='Mnist_Conv_Adam_noy', restore=False)
     if scenario == 3:
         model = ModelHqMnist(batch_size=1, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)
         train(model, data, name='Mnist_Hq')
     if scenario == 4:
-        model = ModelConvCeleb(batch_size=128, z_dim=25, y_dim=None)
-        data = CelebA()
-        train(model, data, name='Celeb_Conv_Momentum_noy')
+        model = ModelConvCeleb(batch_size=128, z_dim=10, y_dim=y_dim)
+        data = CelebA(mean=True)
+        train(model, data, name='Celeb_Conv_Adam')

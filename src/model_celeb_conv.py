@@ -1,20 +1,13 @@
 import tensorflow as tf
 from tensorflow.contrib.layers import batch_norm
+from src.mode_base import ModelBase
 
 
-class ModelConvCeleb:
+class ModelConvCeleb(ModelBase):
 
-    def __init__(self, batch_size, z_dim, y_dim):
-        self.batch_size = batch_size
-        self.input_dim = [32, 32, 3]
-        self.z_dim = z_dim
-        self.y_dim = y_dim
+    def __init__(self, batch_size, z_dim, y_dim=None, is_training=True):
+        super().__init__(batch_size, z_dim, y_dim, is_training)
         self.x_image = tf.placeholder(tf.float32, [batch_size, 32, 32, 3], name='x_image')
-        self.y_labels = tf.placeholder(tf.float32, [batch_size, y_dim], name='y_labels')
-        self.bn_settings = {'decay': 0.9,
-                            'updates_collections': None,
-                            'scale': True,
-                            'epsilon': 1e-05}
 
     def encoder(self):
         # Image size in next layers
@@ -71,28 +64,3 @@ class ModelConvCeleb:
             current_input = tf.nn.tanh(current_input)
             y_image = tf.reshape(current_input, shape=[self.batch_size, 32, 32, 3])
             return y_image
-
-    def discriminator(self, z, reuse=False):
-        with tf.variable_scope('discriminator') as scope:
-            if reuse:
-                scope.reuse_variables()
-            neuron_numbers = [250, 250]
-            current_input = z
-            input_dim = self.z_dim
-            for i, n in enumerate(neuron_numbers):
-                w = tf.get_variable('W_disc_dens%d' % i, shape=[input_dim, n],
-                                    initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('b_disc_dens%d' % i, shape=[n], initializer=tf.constant_initializer())
-                current_input = tf.matmul(current_input, w) + b
-                current_input = tf.maximum(0.2 * current_input, current_input)
-                input_dim = n
-
-            w = tf.get_variable('W_disc_out', shape=[input_dim, 1],
-                                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.get_variable('b_disc_out', shape=[1], initializer=tf.constant_initializer())
-            y = tf.matmul(current_input, w) + b
-        return y
-
-    def sampler(self):
-        z = tf.truncated_normal([self.batch_size, self.z_dim], name='sampled_z')
-        return z
