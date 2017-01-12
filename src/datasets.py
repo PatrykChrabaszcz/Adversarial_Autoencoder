@@ -14,7 +14,8 @@ class CelebA:
         self.val_labels = np.uint8(np.load(os.path.join(celeb_path, 'val_labels_32.npy')))
         self.train_images = np.rollaxis(self.train_images, 1, 4)
         self.val_images = np.rollaxis(self.train_images, 1, 4)
-        self.mean_image = False
+        self.mean_image = None
+        self.name = 'Celeb'
 
         if mean:
             self.mean_image = np.mean(self.train_images, axis=0)
@@ -51,6 +52,7 @@ class MNIST:
         self.train_images = data['x_train']
         self.test_images = data['x_test']
         self.mean_image = None
+        self.name = 'Mnist'
 
         if mean:
             self.mean_image = np.mean(data['x_train'], axis=0)

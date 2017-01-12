@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import (QWidget, QPushButton, QFileDialog, QCheckBox,
                              QVBoxLayout, QLabel, QHBoxLayout, QSlider, QComboBox, QApplication)
-from PyQt5.QtGui import QPixmap, QColor
+from PyQt5.QtGui import QPixmap, QColor, QImage
 from PyQt5.QtCore import Qt, QTimer
-from PIL import ImageQt
+from PIL import ImageQt, Image
 import sys
 from scipy.misc import imread, imsave, toimage
 import tensorflow as tf
@@ -46,6 +46,8 @@ class Window(QWidget):
                                 'models/model_Mnist_Dense_Adam_noy.ckpt',
                                 'models/model_Mnist_Conv_Adam.ckpt',
                                 'models/model_Mnist_Conv_Adam_noy.ckpt',
+                                'models/model_Celeb_Conv_Adam.ckpt',
+                                'models/model_Celeb_Conv_Adam_noy.ckpt',
                                 'models/model_Mnist_Hq.ckpt',
                                 'Celeb_Conv_with_y',
                                 'Celeb_conv_without_y'])
@@ -137,9 +139,9 @@ class Window(QWidget):
             self.image_size = 28
             self.image_channels = 1
         elif 'Celeb' in s_m:
-            self.data = CelebA()
+            self.data = CelebA(mean=True)
             ModelClass = ModelConvCeleb
-            self.z_dim = 25
+            self.z_dim = 10
             if 'noy' in s_m:
                 self.y_dim = None
             else:
@@ -261,13 +263,18 @@ class Window(QWidget):
 
         # Get Image
         img = imread(f_name)/np.float32(256)
+        if self.data.name == 'Celeb':
+            img = img[:, :, :3]
+            img -= self.data.mean_image
+            img = np.reshape(img, [1, 32, 32, 3])
+
         self.iimg[index] = img
         self.img_z[index] = self.sess.run(self.solver.z_encoded, feed_dict={self.solver.x_image: img})
-        self.img_y[index] = np.array([1] + [0] * 9).reshape([1, 10])
+        self.img_y[index] = np.array([1] + [0] * 39).reshape([1, self.y_dim])
         if 'Mnist' in str(self.cb_model.currentText()):
             img = np.reshape(img, [28, 28])
-        px = QPixmap.fromImage(ImageQt.ImageQt(toimage(img)))
-        self.l_iimg[index].setPixmap(px.scaled(self.image_size*5, self.image_size*5))
+        px = self.toQImage(img)
+        self.l_iimg[index].setPixmap(px)
 
         self.curr_index = index
         self.set_sliders()
@@ -275,27 +282,22 @@ class Window(QWidget):
 
     def sample_image(self, index, clicked):
         z = self.sess.run(self.solver.z_sampled)
-        y = np.random.randint(0, 10)
-        y = np.array([0 if i != y else 1 for i in range(10)]).reshape([1, 10])
+        if self.y_dim:
+            y = np.random.randint(0, self.y_dim)
+            y = np.array([0 if i != y else 1 for i in range(self.y_dim)]).reshape([1, self.y_dim])
+        else:
+            y = [[0]]
         img = self.sess.run(self.solver.x_from_z,
                             feed_dict={self.solver.z_provided: z, self.solver.y_labels: y})
-
         self.iimg[index] = img
-        if 'Mnist' in str(self.cb_model.currentText()):
-            img = np.reshape(img, [28, 28])
+        px = self.toQImage(img)
+        self.l_iimg[index].setPixmap(px)
 
-        px = QPixmap.fromImage(ImageQt.ImageQt(toimage(img)))
-        self.l_iimg[index].setPixmap(px.scaled(self.image_size*5, self.image_size*5))
         self.img_z[index] = z
         self.img_y[index] = y
         self.curr_index = index
         self.set_sliders()
         self.set_y()
-    # def run_encoder(self, index):
-    #     self.img_z[index] = self.sess.run(self.solver.z_encoded, feed_dict={self.solver.x_image: self.iimg[index]})
-    #     if index == 0:
-    #         self.set_sliders()
-
 
     def run_animation(self):
         self._anim_steps = 400
@@ -307,12 +309,10 @@ class Window(QWidget):
         self._t.start()
 
     def animationStep(self):
-        x_rec = self.sess.run(self.solver.x_from_z, feed_dict={self.solver.z_provided: self._anim_z[self._anim_step],
-                                                               self.solver.y_labels: self._anim_y[self._anim_step]})
-        img = x_rec
-        img = np.reshape(img, [28, 28])
-        px = QPixmap.fromImage(ImageQt.ImageQt(toimage(img)))
-        self.l_oimg.setPixmap(px.scaled(self.image_size * 5, self.image_size * 5))
+        img = self.sess.run(self.solver.x_from_z, feed_dict={self.solver.z_provided: self._anim_z[self._anim_step],
+                                                             self.solver.y_labels: self._anim_y[self._anim_step]})
+        px = self.toQImage(img)
+        self.l_oimg.setPixmap(px)
         self._anim_step += 1
         if self._anim_step == self._anim_steps:
             self._t.stop()
@@ -320,17 +320,28 @@ class Window(QWidget):
     def run_decoder(self):
         z = self.img_z[self.curr_index]
         y = self.img_y[self.curr_index]
-        x_rec = self.sess.run(self.solver.x_from_z, feed_dict={self.solver.z_provided: z, self.solver.y_labels: y})
-        img = x_rec
-        img = np.reshape(img, [28, 28])
-        px = QPixmap.fromImage(ImageQt.ImageQt(toimage(img)))
-        self.l_oimg.setPixmap(px.scaled(self.image_size*5, self.image_size*5))
+        img = self.sess.run(self.solver.x_from_z, feed_dict={self.solver.z_provided: z, self.solver.y_labels: y})
 
-    def draw_sample(self):
-        self.iimg = self.data.train_images[0]
-        self.curr_y = self.data.train_labels[0]
-        imsave('sample.png', self.i_img)
-        self.l_iimg.setPixmap(QPixmap('sample.png'))
+        px = self.toQImage(img)
+        self.l_oimg.setPixmap(px)
+
+    # def draw_sample(self):
+    #     self.iimg = self.data.train_images[0]
+    #     self.curr_y = self.data.train_labels[0]
+    #     imsave('sample.png', self.i_img)
+    #     self.l_iimg.setPixmap(QPixmap('sample.png'))
+
+    def toQImage(self, image):
+        img = np.reshape(image + self.data.mean_image, [32, 32, 3])
+        img = img - np.min(img)
+        img = img / np.max(img)
+        pilimage = Image.fromarray(np.uint8(img*255))
+        imageq = ImageQt.ImageQt(pilimage)
+        qimage = QImage(imageq)
+        pix = QPixmap(qimage)
+        pix = pix.scaled(5*self.image_size, 5*self.image_size)
+
+        return pix
 
 
 def main():

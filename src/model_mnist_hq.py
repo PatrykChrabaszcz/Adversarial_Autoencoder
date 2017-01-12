@@ -8,7 +8,7 @@ class ModelHqMnist(ModelBase):
 
     def __init__(self, batch_size, z_dim, y_dim=None, is_training=False):
         super().__init__(batch_size, z_dim, y_dim, is_training)
-        self.neuron_numbers = [250, 250]
+        self.neuron_numbers = [1000, 1000]
         self.input_dim = 784
         self.x_image = tf.placeholder(tf.float32, [batch_size, self.input_dim], name='x_image')
 
@@ -21,7 +21,7 @@ class ModelHqMnist(ModelBase):
             b = tf.get_variable('b_enc_dens%d' % i, shape=[n],
                                 initializer=tf.constant_initializer())
             current_input = tf.matmul(current_input, w) + b
-            current_input = batch_norm(current_input, scope=('batch_norm_enc%d' % i), **self.bn_settings)
+            #current_input = batch_norm(current_input, scope=('batch_norm_enc%d' % i), **self.bn_settings)
             current_input = tf.nn.relu(current_input)
             input_dim = n
 
@@ -53,7 +53,7 @@ class ModelHqMnist(ModelBase):
                                     initializer=tf.random_normal_initializer(0, 1.6))
                 b = tf.get_variable('b_dec_dens%d' % i, shape=[n], initializer=tf.constant_initializer())
                 current_input = tf.matmul(current_input, w) + b
-                current_input = batch_norm(current_input, scope=('batch_norm_dec%d' % i), **self.bn_settings)
+                #current_input = batch_norm(current_input, scope=('batch_norm_dec%d' % i), **self.bn_settings)
                 current_input = tf.nn.relu(current_input)
                 input_dim = n
 

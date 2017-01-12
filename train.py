@@ -86,6 +86,6 @@ if __name__ == '__main__':
         data = MNIST(mean=False)
         train(model, data, name='Mnist_Hq')
     if scenario == 4:
-        model = ModelConvCeleb(batch_size=128, z_dim=10, y_dim=y_dim)
-        data = CelebA(mean=True)
-        train(model, data, name='Celeb_Conv_Adam')
+        model = ModelConvCeleb(batch_size=128, z_dim=25, y_dim=y_dim)
+        data = CelebA(mean=False)
+        train(model, data, name='Celeb_Conv_Adam_sigmoid_25')
