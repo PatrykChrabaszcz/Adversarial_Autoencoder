@@ -19,6 +19,7 @@ z.npy
 models/*
 MNIST/*
 CELEB/*
+CELEB_BIG/*
 *___jb_old___
 
 # C extensions

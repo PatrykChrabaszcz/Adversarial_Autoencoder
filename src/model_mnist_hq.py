@@ -50,15 +50,15 @@ class ModelHqMnist(ModelBase):
 
             for i, n in enumerate(self.neuron_numbers[::-1]):
                 w = tf.get_variable('W_dec_dens%d' % i, shape=[input_dim, n],
-                                    initializer=tf.random_normal_initializer(0, 1.6))
+                                    initializer=tf.random_normal_initializer(0, 0.1))
                 b = tf.get_variable('b_dec_dens%d' % i, shape=[n], initializer=tf.constant_initializer())
                 current_input = tf.matmul(current_input, w) + b
-                #current_input = batch_norm(current_input, scope=('batch_norm_dec%d' % i), **self.bn_settings)
+                # current_input = batch_norm(current_input, scope=('batch_norm_dec%d' % i), **self.bn_settings)
                 current_input = tf.nn.relu(current_input)
                 input_dim = n
 
             w = tf.get_variable('W_dec_out', shape=[input_dim, 1],
-                                initializer=tf.random_normal_initializer(0, 1.6))
+                                initializer=tf.random_normal_initializer(0, 0.1))
             b = tf.get_variable('b_dec_out', shape=[1], initializer=tf.constant_initializer())
             x_reconstructed = tf.matmul(current_input, w) + b
             x_reconstructed = tf.nn.sigmoid(x_reconstructed)

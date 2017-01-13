@@ -3,19 +3,20 @@ from tensorflow.contrib.layers import batch_norm
 from src.mode_base import ModelBase
 
 
-class ModelConvCeleb(ModelBase):
+# CODE IT
+class ModelConvCelebBig(ModelBase):
 
     def __init__(self, batch_size, z_dim, y_dim=None, is_training=True):
         super().__init__(batch_size, z_dim, y_dim, is_training)
-        self.x_image = tf.placeholder(tf.float32, [batch_size, 32, 32, 3], name='x_image')
+        self.x_image = tf.placeholder(tf.float32, [batch_size, 128, 128, 3], name='x_image')
 
     def encoder(self):
         # Image size in next layers
-        # i_s = [32, 16, 8, 4, 1]
+        # i_s = [128, 64, 32, 16, 8, 4, 1]
         # Channels in next layers
-        f_n = [3, 128, 256, 512, self.z_dim]
+        f_n = [3, 32, 64, 128,  256, 512, self.z_dim]
         # Filter sizes (3x3xfn[i] for each i-th layer)
-        f_s = [None, 3, 3, 3, 4]
+        f_s = [None, 3, 3, 3, 3, 3, 4]
         padding = [None, 'SAME', 'SAME', 'SAME', 'VALID']
 
         current_input = self.x_image

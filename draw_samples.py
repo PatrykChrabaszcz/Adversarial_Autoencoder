@@ -77,8 +77,8 @@ def plot_samples(model, data, name):
 
 
 if __name__ == '__main__':
-    scenario = 3
-    y_dim = 10
+    scenario = 4
+    y_dim = 40
     if scenario == 1:
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
         data = MNIST(mean=False)
@@ -92,6 +92,6 @@ if __name__ == '__main__':
         data = MNIST(mean=False)
         plot_samples(model, data, name='Mnist_Hq')
     if scenario == 4:
-        model = ModelConvCeleb(batch_size=128, z_dim=25, y_dim=None, is_training=False)
+        model = ModelConvCeleb(batch_size=128, z_dim=10, y_dim=None, is_training=False)
         data = CelebA()
-        plot_samples(model, data, name='Celeb_Conv_Momentum_noy')
+        plot_samples(model, data, name='Celeb_Conv_Adam_noy')
