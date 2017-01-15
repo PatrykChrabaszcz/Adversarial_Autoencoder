@@ -1,10 +1,10 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.contrib.layers import batch_norm
+
 from src.mode_base import ModelBase
+from src.utils import lin, lin_relu_bn
 
 
-# Right now works only with batch size = 1
 class ModelHqMnist(ModelBase):
 
     def __init__(self, batch_size, z_dim, y_dim=None, is_training=False):
@@ -14,67 +14,61 @@ class ModelHqMnist(ModelBase):
         self.x_image = tf.placeholder(tf.float32, [batch_size, self.input_dim], name='x_image')
 
     def encoder(self):
-        current_input = self.x_image
-        input_dim = self.input_dim
+        c_i = self.x_image
         for i, n in enumerate(self.neuron_numbers):
-            w = tf.get_variable('W_enc_dens%d' % i, shape=[input_dim, n],
-                                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.get_variable('b_enc_dens%d' % i, shape=[n],
-                                initializer=tf.constant_initializer())
-            current_input = tf.matmul(current_input, w) + b
-            #current_input = batch_norm(current_input, scope=('batch_norm_enc%d' % i), **self.bn_settings)
-            current_input = tf.maximum(0.2 * current_input, current_input)
-            input_dim = n
+            c_i = lin_relu_bn(c_i, n, self.bn_settings, "enc_%d" % i)
 
-        w = tf.get_variable('W_enc_out', shape=[input_dim, self.z_dim],
-                            initializer=tf.contrib.layers.xavier_initializer())
-        b = tf.get_variable('b_enc_out', shape=[self.z_dim],
-                            initializer=tf.constant_initializer())
-        z = tf.matmul(current_input, w) + b
+        z = lin(c_i, self.z_dim, "enc_fin")
+
         return z
 
     def decoder(self, z, reuse=False, hq=False):
         with tf.variable_scope('decoder') as scope:
             if reuse:
-                scope.reuse_variables()
-            scale = 1
+                tf.get_variable_scope().reuse_variables()
+
+            n_n = 1000
+            gen_n_points = 28 * 28
+            scale = 1.0
+            x, y, r = self.coordinates(28, 28, 1.0)
             if hq:
-                scale = 50
-            coordinates = tf.convert_to_tensor(self._coordinates(scale=scale), dtype=tf.float32)
-            if self.y_dim:
-                z = tf.concat(1, [z, self.y_labels])
-                input_dim = self.z_dim + self.y_dim + 2
-            else:
-                input_dim = self.z_dim + 2
-            z = tf.tile(z, [784*scale*scale, 1])
-            current_input = tf.concat(1, [coordinates, z])
+                scale = 10.0
+                gen_n_points = 280*280
+                x, y, r = self.coordinates(280, 280, 10.0)
 
-            for i, n in enumerate(self.neuron_numbers[::-1]):
-                w = tf.get_variable('W_dec_dens%d' % i, shape=[input_dim, n],
-                                    initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('b_dec_dens%d' % i, shape=[n], initializer=tf.constant_initializer())
-                current_input = tf.matmul(current_input, w) + b
-                # current_input = batch_norm(current_input, scope=('batch_norm_dec%d' % i), **self.bn_settings)
-                current_input = tf.maximum(0.2 * current_input, current_input)
-                input_dim = n
+            z_scaled = tf.reshape(z, [self.batch_size, 1, self.z_dim]) * \
+                       tf.ones([gen_n_points, 1], dtype=tf.float32) * scale
+            z_unroll = tf.reshape(z_scaled, [self.batch_size * gen_n_points, self.z_dim])
+            x_unroll = tf.reshape(x, [self.batch_size * gen_n_points, 1])
+            y_unroll = tf.reshape(y, [self.batch_size * gen_n_points, 1])
+            r_unroll = tf.reshape(r, [self.batch_size * gen_n_points, 1])
+            x_unroll = tf.cast(x_unroll, dtype=tf.float32)
+            y_unroll = tf.cast(y_unroll, dtype=tf.float32)
+            r_unroll = tf.cast(r_unroll, dtype=tf.float32)
 
-            w = tf.get_variable('W_dec_out', shape=[input_dim, 1],
-                                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.get_variable('b_dec_out', shape=[1], initializer=tf.constant_initializer())
-            x_reconstructed = tf.matmul(current_input, w) + b
+            U = lin(z_unroll, n_n, 'dec_g_0_z') + \
+                lin(x_unroll, n_n, 'dec_g_0_x') + \
+                lin(y_unroll, n_n, 'dec_g_0_y') + \
+                lin(r_unroll, n_n, 'dec_g_0_r')
 
-            x_reconstructed = tf.reshape(x_reconstructed, [self.batch_size, self.input_dim*scale*scale])
-            x_reconstructed = tf.nn.sigmoid(x_reconstructed)
-            #x_reconstructed = tf.transpose(x_reconstructed)
+            H = tf.nn.softplus(U)
 
-            return x_reconstructed
+            for i in range(1, 2):
+                H = tf.nn.tanh(lin(H, n_n, 'dec_g_tanh_%d' % i))
 
-    def _coordinates(self, scale=1):
-        px = 28
-        scale_f = float(scale)
-        x = np.arange(px * scale) / scale_f
-        x = np.array([[i] * self.batch_size for i in x]).reshape([px * scale * self.batch_size, 1])
-        x = np.tile(x, [px*scale, 1])
-        y = np.array([[i / scale_f] * px * scale * self.batch_size for i in range(px * scale)]).\
-            reshape([px * px * scale * scale * self.batch_size, 1])
-        return np.concatenate([x, y], axis=1)
+            output = tf.sigmoid(lin(H, 1, 'dec_g_fin'))
+            x_rec = tf.reshape(output, [self.batch_size, gen_n_points])
+
+            return x_rec
+
+    def coordinates(self, x_dim=32, y_dim=32, scale=1.0):
+        n_pixel = x_dim * y_dim
+        x_range = scale * (np.arange(x_dim) - (x_dim - 1) / 2.0) / (x_dim - 1) / 0.5
+        y_range = scale * (np.arange(y_dim) - (y_dim - 1) / 2.0) / (y_dim - 1) / 0.5
+        x_mat = np.matmul(np.ones((y_dim, 1)), x_range.reshape((1, x_dim)))
+        y_mat = np.matmul(y_range.reshape((y_dim, 1)), np.ones((1, x_dim)))
+        r_mat = np.sqrt(x_mat * x_mat + y_mat * y_mat)
+        x_mat = np.tile(x_mat.flatten(), self.batch_size).reshape(self.batch_size, n_pixel, 1)
+        y_mat = np.tile(y_mat.flatten(), self.batch_size).reshape(self.batch_size, n_pixel, 1)
+        r_mat = np.tile(r_mat.flatten(), self.batch_size).reshape(self.batch_size, n_pixel, 1)
+        return x_mat, y_mat, r_mat

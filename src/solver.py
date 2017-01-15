@@ -58,6 +58,3 @@ class Solver:
 
         self.enc_optimizer = tf.train.AdamOptimizer(learning_rate=self.enc_lr, beta1=0.5).\
             minimize(self.enc_loss, var_list=enc_vars)
-
-        # GAN on output files
-

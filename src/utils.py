@@ -76,10 +76,10 @@ def _phase_shift(I, r):
     return tf.reshape(X, (bsize, a*r, b*r, 1))
 
 
-def PS(X, r, color=False):
+def PS(X, r, out_dim):
     # Main OP that you can arbitrarily use in you tensorflow code
-    if color:
-        Xc = tf.split(3, 3, X)
+    if out_dim is not 1:
+        Xc = tf.split(3, out_dim, X)
         X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
     else:
         X = _phase_shift(X, r)

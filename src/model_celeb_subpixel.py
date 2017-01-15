@@ -45,22 +45,22 @@ class ModelSubpixelCeleb(ModelBase):
             # c_i shape is batch_size x 1 x 1 x z_dim(+y_dim)
 
             c_i = conv(c_i, filter_size=1, stride=1, out_channels=1024, name="dec_conv_1")
-            c_i = PS(c_i, 4)
+            c_i = PS(c_i, 4, out_dim=64)
             # c_i shape is batch_size x 4 x 4 x 64
 
             c_i = relu_bn_conv(c_i, 3, 1, 256, self.bn_settings, name="dec_conv_2")
-            c_i = PS(c_i, 2)
+            c_i = PS(c_i, 2, out_dim=64)
             # c_i shape is batch_size x 8 x 8 x 64
 
             c_i = relu_bn_conv(c_i, 3, 1, 256, self.bn_settings, name="dec_conv_3")
-            c_i = PS(c_i, 2)
+            c_i = PS(c_i, 2, out_dim=64)
             # c_i shape is batch_size x 16 x 16 x 64
 
             c_i = relu_bn_conv(c_i, 3, 1, 128, self.bn_settings, name="dec_conv_4")
-            c_i = PS(c_i, 2)
+            c_i = PS(c_i, 2, out_dim=32)
             # c_i shape is batch_size x 32 x 32 x 32
 
-            c_i = relu_bn_conv(c_i, 3, 1, 3, self.bn_settings, name = "dec_conv_5")
+            c_i = relu_bn_conv(c_i, 3, 1, 3, self.bn_settings, name="dec_conv_5")
 
             y_image = tf.nn.tanh(c_i)
             return y_image

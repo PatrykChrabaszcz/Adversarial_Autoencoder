@@ -7,7 +7,6 @@ from src.model_mnist_hq import ModelHqMnist
 from src.model_celeb_conv import ModelConvCeleb
 from src.model_celeb_res import ModelResCeleb
 from src.model_celeb_subpixel import ModelSubpixelCeleb
-from src.model_celeb_big import ModelBigCeleb
 
 from src.datasets import MNIST, CelebA
 from src.solver import Solver
@@ -73,7 +72,7 @@ def train(model, data, name, restore=False):
 
 
 if __name__ == '__main__':
-    scenario = 14
+    scenario = 7
 
     # Mnist dense with y labels
     if scenario == 1:
@@ -131,51 +130,20 @@ if __name__ == '__main__':
         data = CelebA(mean=True)
         train(model, data, name='Celeb_Res_noy')
 
-    # Celeb subpixel with y
     elif scenario == 9:
         y_dim = 40
-        model = ModelSubpixelCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
+        model = ModelResCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
         data = CelebA(mean=True)
         train(model, data, name='Celeb_Subpixel_y')
 
-    # Celeb subpixel without y
     elif scenario == 10:
         y_dim = None
-        model = ModelSubpixelCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
+        model = ModelResCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
         data = CelebA(mean=True)
         train(model, data, name='Celeb_Subpixel_noy')
 
-    # Celeb big with y
-    elif scenario == 11:
-        y_dim = 40
-        model = ModelBigCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
-        data = CelebA(mean=True)
-        train(model, data, name='CelebBig_y')
-
-    # Celeb big without y
-    elif scenario == 12:
-        y_dim = None
-        model = ModelBigCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
-        data = CelebA(mean=True)
-        train(model, data, name='CelebBig_noy')
-
     # Mnist hq model with y (Not tested!)
     if scenario == 100:
-        y_dim = None
-        model = ModelHqMnist(batch_size=128, z_dim=10, y_dim=y_dim)
+        model = ModelHqMnist(batch_size=1, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)
         train(model, data, name='Mnist_Hq')
-
-    # Mnist res with y labels
-    elif scenario == 13:
-        y_dim = 10
-        model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim)
-        data = MNIST(mean=False)
-        train(model, data, name='Mnist_Res_y', restore=False)
-
-    # Mnist res without y labels
-    elif scenario == 14:
-        y_dim = None
-        model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim)
-        data = MNIST(mean=False)
-        train(model, data, name='Mnist_Res_noy', restore=False)
