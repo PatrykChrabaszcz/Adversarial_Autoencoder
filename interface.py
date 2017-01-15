@@ -36,11 +36,16 @@ class Window(QWidget):
         self.cb_model = QComboBox(self._w_start)
         self.cb_model.addItems(['models/model_Mnist_Dense_Adam.ckpt',
                                 'models/model_Mnist_Dense_Adam_noy.ckpt',
+                                'models/model_Mnist_Conv_y.ckpt',
+                                'models/model_Mnist_Conv_Adam_n.ckpt',
+                                'models/model_Mnist_Conv_Adam_noy_n.ckpt',
                                 'models/model_Mnist_Conv_Adam.ckpt',
+                                'models/model_Mnist_Conv_Adam_new.ckpt',
                                 'models/model_Mnist_Conv_Adam_noy.ckpt',
                                 'models/model_Celeb_Conv_Adam_sigmoid_50_noy.ckpt',
                                 'models/model_Celeb_Conv_Adam_tanh_50_noy.ckpt',
-                                'models/model_Celeb_Conv_Adam_tanh_50.ckpt'
+                                'models/model_Celeb_Conv_Adam_tanh_50.ckpt',
+                                'models/model_Mnist_Hq.ckpt'
                                 ])
         self._l_start.addWidget(self.cb_model)
 
@@ -92,6 +97,7 @@ class Window(QWidget):
                 ModelClass = ModelConvMnist
             elif 'Hq' in s_m:
                 ModelClass = ModelHqMnist
+                self.z_dim = 10
             self.y_dim = 10
             self.image_size = 28
             self.image_channels = 1
@@ -131,20 +137,24 @@ class Window(QWidget):
         self._l_start.deleteLater()
         self._l_main.addLayout(l_left)
         b_iimgl = [QPushButton('Load first image', self), QPushButton('Load second image', self)]
-        b_iimgrs = [QPushButton('Sample random first image', self), QPushButton('Sample random second image', self)]
+        b_iimgrz = [QPushButton('Sample random first z', self), QPushButton('Sample random second z', self)]
+        b_iimgri = [QPushButton('Sample random first image', self), QPushButton('Sample random second image', self)]
         imgl_slots = [partial(self.load_image, 0), partial(self.load_image, 1)]
-        imgrs_slots = [partial(self.sample_random_image, 0), partial(self.sample_random_image, 1)]
+        imgrz_slots = [partial(self.sample_random_z, 0), partial(self.sample_random_z, 1)]
+        imgri_slots = [partial(self.sample_random_image, 0), partial(self.sample_random_image, 1)]
 
         for i in range(2):
             self._l_iimg[i].setPixmap(pix)
             self._l_oimg[i].setPixmap(pix)
             l_left.addWidget(b_iimgl[i])
-            l_left.addWidget(b_iimgrs[i])
+            l_left.addWidget(b_iimgrz[i])
+            l_left.addWidget(b_iimgri[i])
             l = QHBoxLayout()
             l.addWidget(self._l_iimg[i])
             l.addWidget(self._l_oimg[i])
             b_iimgl[i].clicked.connect(imgl_slots[i])
-            b_iimgrs[i].clicked.connect(imgrs_slots[i])
+            b_iimgrz[i].clicked.connect(imgrz_slots[i])
+            b_iimgri[i].clicked.connect(imgri_slots[i])
             l_left.addLayout(l)
 
         # Middle layout
@@ -264,11 +274,11 @@ class Window(QWidget):
         self.set_y()
         self.run_decoder(index)
 
-    def sample_random_image(self, index, clicked):
+    def sample_random_z(self, index, clicked):
         z = self.sess.run(self.solver.z_sampled)
         if self.data.name == 'Mnist':
-            y = np.random.randint(0, self.y_dim)
-            y = np.array([0 if i != y else 1 for i in range(self.y_dim)]).reshape([1, self.y_dim])
+            y = np.random.randint(0, 10)
+            y = np.array([0 if i != y else 1 for i in range(10)]).reshape([1, 10])
         elif self.data.name == 'Celeb':
             y = np.random.randint(0, 1, [1, 40])
 
@@ -311,11 +321,26 @@ class Window(QWidget):
         px = self.toQImage(img)
         self._l_oimg[index].setPixmap(px)
 
-    # def draw_sample(self):
-    #     self.iimg = self.data.train_images[0]
-    #     self.curr_y = self.data.train_labels[0]
-    #     imsave('sample.png', self.i_img)
-    #     self.l_iimg.setPixmap(QPixmap('sample.png'))
+    def sample_random_image(self, index, clicked):
+        i = np.random.randint(0, self.data.test_images.shape[0])
+        img = self.data.test_images[i]
+        img = np.reshape(img, [1, 784])
+        y = self.data.test_labels[i]
+        y = np.reshape(y, [1, 10])
+        self.iimg[index] = img
+        self.img_z[index] = self.sess.run(self.solver.z_encoded,
+                                          feed_dict={self.solver.x_image: img, self.solver.y_labels: y})
+        self.img_y[index] = y
+        if 'Mnist' in str(self.cb_model.currentText()):
+            img = np.reshape(img, [28, 28])
+        px = self.toQImage(img)
+        self._l_iimg[index].setPixmap(px)
+
+        self.curr_index = index
+        self.set_sliders()
+        self.set_y()
+        self.run_decoder(index)
+
 
     def toQImage(self, image):
         if self.data.name == 'Mnist':

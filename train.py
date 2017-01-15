@@ -1,11 +1,12 @@
 import time
 import tensorflow as tf
-import numpy as np
 
 from src.model_mnist_conv import ModelConvMnist
 from src.model_mnist_dense import ModelDenseMnist
 from src.model_mnist_hq import ModelHqMnist
 from src.model_celeb_conv import ModelConvCeleb
+from src.model_celeb_res import ModelResCeleb
+from src.model_celeb_subpixel import ModelSubpixelCeleb
 
 from src.datasets import MNIST, CelebA
 from src.solver import Solver
@@ -71,21 +72,78 @@ def train(model, data, name, restore=False):
 
 
 if __name__ == '__main__':
-    scenario = 3
-    y_dim = None
+    scenario = 7
+
+    # Mnist dense with y labels
     if scenario == 1:
+        y_dim = 10
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)
-        train(model, data, name='Mnist_Dense_Adam_noy', restore=False)
-    if scenario == 2:
+        train(model, data, name='Mnist_Dense_y', restore=False)
+
+    # Mnist dense without y labels
+    elif scenario == 2:
+        y_dim = None
+        model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim)
+        data = MNIST(mean=False)
+        train(model, data, name='Mnist_Dense_noy', restore=False)
+
+    # Mnist convolution with y labels
+    elif scenario == 3:
+        y_dim = 10
         model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)
-        train(model, data, name='Mnist_Conv_Adam_noy', restore=False)
-    if scenario == 3:
-        model = ModelHqMnist(batch_size=64, z_dim=10, y_dim=y_dim)
+        train(model, data, name='Mnist_Conv_y', restore=False)
+
+    # Mnist convolution without y labels
+    elif scenario == 4:
+        y_dim = None
+        model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim)
         data = MNIST(mean=False)
-        train(model, data, name='Mnist_Hq')
-    if scenario == 4:
+        train(model, data, name='Mnist_Conv_noy', restore=False)
+
+    # Celeb convolution with y labels
+    elif scenario == 5:
+        y_dim = 40
         model = ModelConvCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
         data = CelebA(mean=True)
-        train(model, data, name='Celeb_Conv_Adam_tanh_50')
+        train(model, data, name='Celeb_Conv_y')
+
+    # Celeb convolution without y labels
+    elif scenario == 6:
+        y_dim = None
+        model = ModelConvCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
+        data = CelebA(mean=True)
+        train(model, data, name='Celeb_Conv_noy')
+
+    # Celeb resnet with y labels
+    elif scenario == 7:
+        y_dim = 40
+        model = ModelResCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
+        data = CelebA(mean=True)
+        train(model, data, name='Celeb_Res_y', restore = True)
+
+    # Celeb resnet without y labels
+    elif scenario == 8:
+        y_dim = None
+        model = ModelResCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
+        data = CelebA(mean=True)
+        train(model, data, name='Celeb_Res_noy')
+
+    elif scenario == 9:
+        y_dim = 40
+        model = ModelResCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
+        data = CelebA(mean=True)
+        train(model, data, name='Celeb_Subpixel_y')
+
+    elif scenario == 10:
+        y_dim = None
+        model = ModelResCeleb(batch_size=128, z_dim=50, y_dim=y_dim)
+        data = CelebA(mean=True)
+        train(model, data, name='Celeb_Subpixel_noy')
+
+    # Mnist hq model with y (Not tested!)
+    if scenario == 100:
+        model = ModelHqMnist(batch_size=1, z_dim=5, y_dim=y_dim)
+        data = MNIST(mean=False)
+        train(model, data, name='Mnist_Hq')

@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+from src.utils import lin
 
 class ModelBase:
     def __init__(self, batch_size, z_dim, y_dim=None, is_training=True):
@@ -26,28 +26,17 @@ class ModelBase:
             if reuse:
                 scope.reuse_variables()
 
+            c_i = z
             if self.y_dim:
-                current_input = tf.concat(1, [z, self.y_labels])
-                input_dim = self.z_dim + self.y_dim
-            else:
-                current_input = z
-                input_dim = self.z_dim
+                c_i = tf.concat(1, [z, self.y_labels])
 
             neuron_numbers = [500, 500]
             for i, n in enumerate(neuron_numbers):
-                w = tf.get_variable('W_disc_dens%d' % i, shape=[input_dim, n],
-                                    initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('b_disc_dens%d' % i, shape=[n], initializer=tf.constant_initializer())
-                current_input = tf.matmul(current_input, w) + b
-                current_input = tf.maximum(0.2 * current_input, current_input)
+                c_i = lin(c_i, n, name="disc_dens_%d" % i)
+                c_i = tf.maximum(0.2 * c_i, c_i)
 
-                input_dim = n
+            y = lin(c_i, 1, name="disc_out")
 
-            w = tf.get_variable('W_disc_out', shape=[input_dim, 1],
-                                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.get_variable('b_disc_out', shape=[1],
-                                initializer=tf.constant_initializer())
-            y = tf.matmul(current_input, w) + b
         return y
 
     def sampler(self):

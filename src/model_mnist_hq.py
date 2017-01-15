@@ -4,6 +4,7 @@ from tensorflow.contrib.layers import batch_norm
 from src.mode_base import ModelBase
 
 
+# Right now works only with batch size = 1
 class ModelHqMnist(ModelBase):
 
     def __init__(self, batch_size, z_dim, y_dim=None, is_training=False):
@@ -22,7 +23,7 @@ class ModelHqMnist(ModelBase):
                                 initializer=tf.constant_initializer())
             current_input = tf.matmul(current_input, w) + b
             #current_input = batch_norm(current_input, scope=('batch_norm_enc%d' % i), **self.bn_settings)
-            current_input = tf.nn.relu(current_input)
+            current_input = tf.maximum(0.2 * current_input, current_input)
             input_dim = n
 
         w = tf.get_variable('W_enc_out', shape=[input_dim, self.z_dim],
@@ -50,21 +51,21 @@ class ModelHqMnist(ModelBase):
 
             for i, n in enumerate(self.neuron_numbers[::-1]):
                 w = tf.get_variable('W_dec_dens%d' % i, shape=[input_dim, n],
-                                    initializer=tf.random_normal_initializer(0, 0.1))
+                                    initializer=tf.contrib.layers.xavier_initializer())
                 b = tf.get_variable('b_dec_dens%d' % i, shape=[n], initializer=tf.constant_initializer())
                 current_input = tf.matmul(current_input, w) + b
                 # current_input = batch_norm(current_input, scope=('batch_norm_dec%d' % i), **self.bn_settings)
-                current_input = tf.nn.relu(current_input)
+                current_input = tf.maximum(0.2 * current_input, current_input)
                 input_dim = n
 
             w = tf.get_variable('W_dec_out', shape=[input_dim, 1],
-                                initializer=tf.random_normal_initializer(0, 0.1))
+                                initializer=tf.contrib.layers.xavier_initializer())
             b = tf.get_variable('b_dec_out', shape=[1], initializer=tf.constant_initializer())
             x_reconstructed = tf.matmul(current_input, w) + b
-            x_reconstructed = tf.nn.sigmoid(x_reconstructed)
 
-            x_reconstructed = tf.reshape(x_reconstructed, [self.input_dim*scale*scale, self.batch_size])
-            x_reconstructed = tf.transpose(x_reconstructed)
+            x_reconstructed = tf.reshape(x_reconstructed, [self.batch_size, self.input_dim*scale*scale])
+            x_reconstructed = tf.nn.sigmoid(x_reconstructed)
+            #x_reconstructed = tf.transpose(x_reconstructed)
 
             return x_reconstructed
 
