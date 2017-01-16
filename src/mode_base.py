@@ -1,6 +1,7 @@
 import tensorflow as tf
 from src.utils import lin
 
+
 class ModelBase:
     def __init__(self, batch_size, z_dim, y_dim=None, is_training=True):
         self.batch_size = batch_size
@@ -18,7 +19,7 @@ class ModelBase:
         pass
 
     # Has to be implemented in subclass
-    def decoder(self, z, hq=False, reuse=False):
+    def decoder(self, z, reuse=False):
         pass
 
     def discriminator(self, z, reuse=False):

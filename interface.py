@@ -3,15 +3,23 @@ from PyQt5.QtWidgets import (QWidget, QPushButton, QFileDialog, QCheckBox,
 from PyQt5.QtGui import QPixmap, QColor, QImage
 from PyQt5.QtCore import Qt, QTimer
 from PIL import ImageQt, Image
+
+
+from scipy.misc import imread
 import sys
-from scipy.misc import imread, imsave, toimage
 import tensorflow as tf
-from src.solver import Solver
-from src.datasets import MNIST, CelebA
-from src.model_mnist_dense import ModelDenseMnist
-from src.model_mnist_conv import ModelConvMnist
-from src.model_mnist_hq import ModelHqMnist
-from src.model_celeb_conv import ModelConvCeleb
+from src.aae_solver import AaeSolver
+from src.aae_gan_solver import AaeGanSolver
+
+from src.datasets import MNIST, CelebA, CelebBig
+from src.model_dense_mnist import ModelDenseMnist
+from src.model_conv_mnist import ModelConvMnist
+
+from src.model_conv_32 import ModelConv32
+
+from src.model_res_32 import ModelRes32
+from src.model_res_128 import ModelRes128
+
 import numpy as np
 from functools import partial
 
@@ -34,18 +42,15 @@ class Window(QWidget):
         self._l_start.addWidget(l_model)
 
         self.cb_model = QComboBox(self._w_start)
-        self.cb_model.addItems(['models/model_Mnist_Dense_Adam.ckpt',
-                                'models/model_Mnist_Dense_Adam_noy.ckpt',
+        self.cb_model.addItems(['models/model_Mnist_Dense_y.ckpt',
+                                'models/model_Mnist_Dense_noy.ckpt',
                                 'models/model_Mnist_Conv_y.ckpt',
-                                'models/model_Mnist_Conv_Adam_n.ckpt',
-                                'models/model_Mnist_Conv_Adam_noy_n.ckpt',
-                                'models/model_Mnist_Conv_Adam.ckpt',
-                                'models/model_Mnist_Conv_Adam_new.ckpt',
-                                'models/model_Mnist_Conv_Adam_noy.ckpt',
-                                'models/model_Celeb_Conv_Adam_sigmoid_50_noy.ckpt',
-                                'models/model_Celeb_Conv_Adam_tanh_50_noy.ckpt',
-                                'models/model_Celeb_Conv_Adam_tanh_50.ckpt',
-                                'models/model_Mnist_Hq.ckpt'
+                                'models/model_Mnist_Conv_noy.ckpt',
+                                'models/model_Celeb_Conv_y.ckpt',
+                                'models/model_Celeb_Conv_noy.ckpt',
+                                'models/model_Celeb_Res_y.ckpt',
+                                'models/model_Celeb_Res_noy.ckpt',
+                                'models/model_CelebBig_Res_noy'
                                 ])
         self._l_start.addWidget(self.cb_model)
 
@@ -74,9 +79,6 @@ class Window(QWidget):
         self.y_checks = []
         self.curr_index = 0
 
-        self.data = None
-        self.solver = None
-
         config = tf.ConfigProto(
                 device_count={'GPU': 0}
             )
@@ -86,24 +88,28 @@ class Window(QWidget):
         self._t.setInterval(10)
         self._t.timeout.connect(self.animationStep)
 
+        self.solver = None
+        self.dataset = None
+        self.settings = {}
+
     def load_model(self, clicked):
         s_m = str(self.cb_model.currentText())
+
+        # Fill up settings from model string
         if 'Mnist' in s_m:
-            self.data = MNIST(mean=False)
+            self.dataset = MNIST()
             self.z_dim = 5
-            if 'Dense' in s_m:
-                ModelClass = ModelDenseMnist
-            elif 'Conv' in s_m:
-                ModelClass = ModelConvMnist
-            elif 'Hq' in s_m:
-                ModelClass = ModelHqMnist
-                self.z_dim = 10
             self.y_dim = 10
             self.image_size = 28
             self.image_channels = 1
+        elif 'CelebBig' in s_m:
+            self.dataset = CelebBig()
+            self.z_dim = 128
+            self.y_dim = 40
+            self.image_size = 128
+            self.image_channels = 3
         elif 'Celeb' in s_m:
-            self.data = CelebA(mean=True)
-            ModelClass = ModelConvCeleb
+            self.dataset = CelebA()
             self.z_dim = 50
             self.y_dim = 40
             self.image_size = 32
@@ -112,9 +118,23 @@ class Window(QWidget):
         if 'noy' in s_m:
             self.y_dim = None
 
-        model = ModelClass(batch_size=self.batch_size, z_dim=self.z_dim, y_dim=self.y_dim, is_training=False)
+        if 'Mnist_Dense' in s_m:
+            model_class = ModelDenseMnist
+        elif 'Mnist_Conv' in s_m:
+            model_class = ModelConvMnist
+        elif 'Celeb_Conv' in s_m:
+            model_class = ModelConv32
+        elif 'Celeb_Res' in s_m:
+            model_class = ModelRes32
+        elif 'CelebBig_Res' in s_m:
+            model_class = ModelRes128
 
-        self.solver = Solver(model=model)
+        model = model_class(batch_size=self.batch_size, z_dim=self.z_dim, y_dim=self.y_dim, is_training=False)
+
+        if 'Gan' in s_m:
+            pass
+        else:
+            self.solver = AaeSolver(model=model)
 
         self.sess.run(tf.global_variables_initializer())
         # Saver
@@ -255,11 +275,11 @@ class Window(QWidget):
 
         # Get Image
         img = imread(f_name)/np.float32(256)
-        if self.data.name == 'Celeb':
+        if self.dataset.name == 'Celeb':
             img = img[:, :, :3]
             img = np.reshape(img, [1, 32, 32, 3])
-            if self.data.mean_image is not None:
-                img -= self.data.mean_image
+            if self.dataset.mean_image is not None:
+                img -= self.dataset.mean_image
 
         self.iimg[index] = img
         self.img_z[index] = self.sess.run(self.solver.z_encoded, feed_dict={self.solver.x_image: img})
@@ -276,10 +296,10 @@ class Window(QWidget):
 
     def sample_random_z(self, index, clicked):
         z = self.sess.run(self.solver.z_sampled)
-        if self.data.name == 'Mnist':
+        if self.dataset.name == 'Mnist':
             y = np.random.randint(0, 10)
             y = np.array([0 if i != y else 1 for i in range(10)]).reshape([1, 10])
-        elif self.data.name == 'Celeb':
+        elif self.dataset.name == 'Celeb':
             y = np.random.randint(0, 1, [1, 40])
 
         img = self.sess.run(self.solver.x_from_z,
@@ -322,17 +342,21 @@ class Window(QWidget):
         self._l_oimg[index].setPixmap(px)
 
     def sample_random_image(self, index, clicked):
-        i = np.random.randint(0, self.data.test_images.shape[0])
-        img = self.data.test_images[i]
-        img = np.reshape(img, [1, 784])
-        y = self.data.test_labels[i]
-        y = np.reshape(y, [1, 10])
+        i = np.random.randint(0, self.dataset.test_images.shape[0])
+        img = self.dataset.test_images[i]
+        # img = np.reshape(img, [1, 784])
+        img = np.reshape(img, [1, 32, 32, 3])
+        y = self.dataset.train_labels[i]
+        # y = np.reshape(y, [1, 10])
+        y = np.reshape(y, [1, 40])
         self.iimg[index] = img
         self.img_z[index] = self.sess.run(self.solver.z_encoded,
                                           feed_dict={self.solver.x_image: img, self.solver.y_labels: y})
         self.img_y[index] = y
         if 'Mnist' in str(self.cb_model.currentText()):
             img = np.reshape(img, [28, 28])
+
+        img += self.dataset.mean_image
         px = self.toQImage(img)
         self._l_iimg[index].setPixmap(px)
 
@@ -343,11 +367,11 @@ class Window(QWidget):
 
 
     def toQImage(self, image):
-        if self.data.name == 'Mnist':
+        if self.dataset.name == 'Mnist':
             img = np.reshape(image, [self.image_size, self.image_size])
             mode = 'L'
-        elif self.data.name == 'Celeb':
-            image += self.data.mean_image
+        elif self.dataset.name == 'Celeb':
+            image += self.dataset.mean_image
             img = np.reshape(image, [self.image_size, self.image_size, self.image_channels])
             mode = 'RGB'
         pilimage = Image.fromarray(np.uint8(img*255), mode)

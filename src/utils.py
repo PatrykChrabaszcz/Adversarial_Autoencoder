@@ -62,6 +62,46 @@ def lin_relu_bn(input, size, bn_settings, name):
     return c_i
 
 
+def block_res_conv(c_i, fn, n, bn_settings, reduce, name):
+    for i in range(1, n):
+        l_i = c_i
+        c_i = relu_bn_conv(c_i, 3, 1, fn, bn_settings, name="%s_blockA%d" % (name, i))
+        c_i = relu_bn_conv(c_i, 3, 1, fn, bn_settings, name="%s_blockB%d" % (name, i))
+        c_i = c_i + l_i
+
+    l_i = c_i
+    c_i = relu_bn_conv(c_i, 3, 1, fn, bn_settings, name="%s_blockA_f" % name)
+
+    # Decrease dimension
+    if reduce:
+        c_i = relu_bn_conv(c_i, 4, 2, fn * 2, bn_settings, name="%s_blockB_f" % name)
+        l_i = conv(l_i, 4, 2, fn * 2, name="%s_proj" % name)
+    else:
+        c_i = relu_bn_conv(c_i, 3, 1, fn, bn_settings, name="%s_blockB_f" % name)
+
+    c_i = c_i + l_i
+
+    return c_i
+
+
+def block_res_tconv(c_i, fn, n, batch_size, bn_settings, name):
+    for i in range(1, n):
+        l_i = c_i
+        c_i = relu_bn_conv(c_i, 3, 1, fn, bn_settings, name="%s_blockA%d" % (name, i))
+        c_i = relu_bn_conv(c_i, 3, 1, fn, bn_settings, name="%s_blockB%d" % (name, i))
+        c_i = c_i + l_i
+
+    l_i = c_i
+    # Increase dimension
+    c_i = relu_bn_conv(c_i, 3, 1, fn, bn_settings, name="%s_blockA_f" % name)
+    c_i = relu_bn_tconv(c_i, 4, 2, batch_size, fn // 2, bn_settings, name="%s_blockB_f" % name)
+
+    l_i = tconv(l_i, 4, 2, batch_size, fn // 2, name="%s_proj" % name)
+    c_i = c_i + l_i
+
+    return c_i
+
+
 # https://github.com/Tetrachrome/subpixel
 def _phase_shift(I, r):
     # Helper function with main phase shift operation

@@ -2,11 +2,11 @@ import numpy as np
 from itertools import combinations
 
 from src.datasets import MNIST, CelebA
-from src.model_mnist_dense import ModelDenseMnist
-from src.model_mnist_conv import ModelConvMnist
+from src.model_dense_mnist import ModelDenseMnist
+from src.model_conv_mnist import ModelConvMnist
 from src.model_mnist_hq import ModelHqMnist
-from src.model_celeb_conv import ModelConvCeleb
-from src.solver import Solver
+from src.model_conv_32 import ModelConvCeleb
+from src.aae_solver import AaeSolver
 import tensorflow as tf
 from PIL import Image
 
@@ -14,7 +14,7 @@ from PIL import Image
 # Script to generate series of images that can later be converted to a gif
 def draw_images(model, data, name):
     # Solver
-    solver = Solver(model=model)
+    solver = AaeSolver(model=model)
     # Session
     config = tf.ConfigProto(
         device_count={'GPU': 0}

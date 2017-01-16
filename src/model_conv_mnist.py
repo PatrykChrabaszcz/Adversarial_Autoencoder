@@ -30,7 +30,7 @@ class ModelConvMnist(ModelBase):
         z = tf.reshape(c_i, shape=[self.batch_size, self.z_dim])
         return z
 
-    def decoder(self, z, hq=False, reuse=False):
+    def decoder(self, z, reuse=False):
         with tf.variable_scope('decoder') as scope:
             if reuse:
                 scope.reuse_variables()

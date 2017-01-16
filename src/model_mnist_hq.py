@@ -22,7 +22,7 @@ class ModelHqMnist(ModelBase):
 
         return z
 
-    def decoder(self, z, reuse=False, hq=False):
+    def decoder(self, z, reuse=False):
         with tf.variable_scope('decoder') as scope:
             if reuse:
                 tf.get_variable_scope().reuse_variables()

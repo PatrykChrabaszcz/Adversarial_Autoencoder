@@ -1,8 +1,7 @@
 from src.mode_base import ModelBase
 
 import tensorflow as tf
-from src.utils import lin_relu_bn
-from src.utils import lin
+from src.utils import lin, lin_relu_bn
 
 
 class ModelDenseMnist(ModelBase):
@@ -20,7 +19,7 @@ class ModelDenseMnist(ModelBase):
         z = lin(c_i, self.z_dim, name="enc_out")
         return z
 
-    def decoder(self, z, hq=False, reuse=False):
+    def decoder(self, z, reuse=False):
         with tf.variable_scope('decoder') as scope:
             c_i = z
             if self.y_dim:

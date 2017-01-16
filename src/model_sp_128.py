@@ -4,7 +4,11 @@ import tensorflow as tf
 from src.utils import conv, relu_bn_conv, PS
 
 
-class ModelSubpixelCeleb(ModelBase):
+
+# Need to find good values of parameters
+
+
+class ModelSubpixel128(ModelBase):
 
     def __init__(self, batch_size, z_dim, y_dim=None, is_training=True):
         super().__init__(batch_size, z_dim, y_dim, is_training)
@@ -32,7 +36,7 @@ class ModelSubpixelCeleb(ModelBase):
         z = tf.reshape(c_i, shape=[self.batch_size, self.z_dim])
         return z
 
-    def decoder(self, z, reuse=False, hq=False):
+    def decoder(self, z, reuse=False):
         with tf.variable_scope('decoder') as scope:
             if reuse:
                 scope.reuse_variables()

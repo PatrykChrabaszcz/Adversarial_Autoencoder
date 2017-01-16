@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class Solver:
+class AaeSolver:
     def __init__(self, model):
 
         # Tensor with images provided by the user
@@ -15,7 +15,6 @@ class Solver:
         # Getting images from latent variables provided by the user
         self.z_provided = tf.placeholder(tf.float32, shape=[model.batch_size, model.z_dim])
         self.x_from_z = model.decoder(self.z_provided)
-        self.xhq_from_z = model.decoder(self.z_provided, reuse=True, hq=True)
 
         # Learning rates for different parts of training
         self.rec_lr = tf.placeholder(tf.float32, shape=[])
