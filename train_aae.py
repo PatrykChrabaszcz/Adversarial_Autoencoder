@@ -9,7 +9,7 @@ from src.model_res_32 import ModelRes32
 from src.model_subpix_32 import ModelSubpix32
 
 from src.model_res_128 import ModelRes128
-from src.model_sp_128 import ModelSubpixel128
+from src.model_subpix_128 import ModelSubpix128
 
 from src.datasets import MNIST, CelebA, CelebBig
 from src.aae_solver import AaeSolver
@@ -70,10 +70,11 @@ def train(solver, data, name, restore=False):
         print("Encoder Lost %f \n" % (loss_enc_sum/steps))
 
         saver.save(sess, 'models/model_%s.ckpt' % name)
+        print('Model saved as models/model_%s.ckpt' % name)
 
 
 if __name__ == '__main__':
-    scenario = 10
+    scenario = 14
     mnist_z_dim = 5
     celeb_z_dim = 50
     celebbig_z_dim = 128
@@ -86,7 +87,8 @@ if __name__ == '__main__':
         model = ModelDenseMnist(batch_size=128, z_dim=mnist_z_dim, y_dim=y_dim)
         solver = AaeSolver(model=model)
         data = MNIST()
-        train(solver, data, name='Mnist_Dense_y', restore=False)
+        print('Training Mnist dense with y labels')
+        train(solver, data, name='Mnist_Dense_y', restore=True)
 
     # Mnist dense without y labels
     elif scenario == 2:
@@ -94,7 +96,8 @@ if __name__ == '__main__':
         model = ModelDenseMnist(batch_size=128, z_dim=mnist_z_dim, y_dim=y_dim)
         solver = AaeSolver(model=model)
         data = MNIST()
-        train(solver, data, name='Mnist_Dense_noy', restore=False)
+        print('Training Mnist dense without y labels')
+        train(solver, data, name='Mnist_Dense_noy', restore=True)
 
     # Mnist convolution with y labels
     elif scenario == 3:
@@ -120,7 +123,7 @@ if __name__ == '__main__':
         model = ModelConv32(batch_size=128, z_dim=celeb_z_dim, y_dim=y_dim)
         data = CelebA()
         solver = AaeSolver(model=model)
-        train(solver, data, name='Celeb_Conv_y')
+        train(solver, data, name='Celeb_Conv_y', restore=False)
 
     # Celeb convolution without y labels
     elif scenario == 6:
@@ -128,7 +131,7 @@ if __name__ == '__main__':
         model = ModelConv32(batch_size=128, z_dim=celeb_z_dim, y_dim=y_dim)
         solver = AaeSolver(model=model)
         data = CelebA()
-        train(solver, data, name='Celeb_Conv_noy')
+        train(solver, data, name='Celeb_Conv_noy', restore=False)
 
     # Celeb resnet with y labels
     elif scenario == 7:
@@ -136,7 +139,8 @@ if __name__ == '__main__':
         model = ModelRes32(batch_size=128, z_dim=celeb_z_dim, y_dim=y_dim)
         solver = AaeSolver(model=model)
         data = CelebA()
-        train(solver, data, name='Celeb_Res_y', restore=False)
+        print('Training Celeb resnet with y labels')
+        train(solver, data, name='Celeb_Res_y', restore=True)
 
     # Celeb resnet without y labels
     elif scenario == 8:
@@ -144,7 +148,8 @@ if __name__ == '__main__':
         model = ModelRes32(batch_size=128, z_dim=celeb_z_dim, y_dim=y_dim)
         solver = AaeSolver(model=model)
         data = CelebA()
-        train(solver, data, name='Celeb_Res_noy', restore=False)
+        print('Training Celeb resnet without y labels')
+        train(solver, data, name='Celeb_Res_noy', restore=True)
 
     # Celeb subpix with y labels
     elif scenario == 9:
@@ -179,3 +184,12 @@ if __name__ == '__main__':
         solver = AaeSolver(model=model)
         data = CelebBig()
         train(solver, data, name='CelebBig_Res_noy', restore=False)
+
+    # CelebBig subpix without y labels
+    elif scenario == 14:
+        y_dim = None
+        model = ModelSubpix128(batch_size=128, z_dim=celebbig_z_dim, y_dim=y_dim)
+        solver = AaeSolver(model=model)
+        data = CelebBig()
+        print('Training Subpix128 without y labels')
+        train(solver, data, name='CelebBig_Subpix_noy', restore=False)

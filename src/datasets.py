@@ -23,7 +23,7 @@ class CelebBig:
                                             np.uint8(np.load(os.path.join(celeb_big_path, 'val_labels_32.npy'))),
                                             np.uint8(np.load(os.path.join(celeb_big_path, 'test_labels_32.npy')))])
 
-    def transfor_back(self, image):
+    def transform_back(self, image):
         return (image+1)/2.0
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):
@@ -65,8 +65,27 @@ class CelebA:
         with open(os.path.join(celeb_path, 'attr_names.txt')) as f:
             self.attr_names = f.readlines()[0].split()
 
-    def transfor_back(self, image):
-        return (image+1)/2.0
+    def sample_image(self):
+        i = np.random.randint(0, self.train_images.shape[0])
+        img = np.reshape(self.train_images[i], [1, 32, 32, 3])
+
+        y = np.reshape(self.train_labels[i], [1, 40])
+        return img, y
+
+    def sample_y(self):
+        return np.array([0 for i in range(40)]).reshape([1, 40])
+
+    def transform2display(self, image):
+        print(image.shape)
+        image = (np.reshape(image, [32, 32, 3]) + 1) / 2.0
+        image.clip(0, 1.0)
+        return image
+
+    def transform2data(self, image, alpha=False):
+        if alpha:
+            image = image[:, :, :3]
+        return np.reshape(image, [1, 32, 32, 3])
+
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):
         if test:
@@ -106,8 +125,23 @@ class MNIST:
         y[np.arange(y_te.size), y_te] = 1
         self.test_labels = y
 
-    def transfor_back(self, image):
+    def sample_image(self):
+        i = np.random.randint(0, self.test_images.shape[0])
+        img = np.reshape(self.test_images[i], [1, 784])
+
+        y = np.reshape(self.test_labels[i], [1, 10])
+        return img, y
+
+    def sample_y(self):
+        y = np.random.randint(0, 10)
+        return np.array([0 if i != y else 1 for i in range(10)]).reshape([1, 10])
+
+    def transform2display(self, image):
+        image = np.resize(image, [28, 28])
         return image
+
+    def transform2data(self, image):
+        return np.resize(image, [1, 784])
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):
         if test:

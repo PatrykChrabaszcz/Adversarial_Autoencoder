@@ -16,9 +16,10 @@ from src.model_dense_mnist import ModelDenseMnist
 from src.model_conv_mnist import ModelConvMnist
 
 from src.model_conv_32 import ModelConv32
-
+from src.model_subpix_32 import ModelSubpix32
 from src.model_res_32 import ModelRes32
 from src.model_res_128 import ModelRes128
+
 
 import numpy as np
 from functools import partial
@@ -42,15 +43,17 @@ class Window(QWidget):
         self._l_start.addWidget(l_model)
 
         self.cb_model = QComboBox(self._w_start)
-        self.cb_model.addItems(['models/model_Mnist_Dense_y.ckpt',
+        self.cb_model.addItems(['models/model_Celeb_Res_y.ckpt',
+                                'models/model_Celeb_Res_noy.ckpt',
+                                'models/model_Mnist_Dense_y.ckpt',
                                 'models/model_Mnist_Dense_noy.ckpt',
                                 'models/model_Mnist_Conv_y.ckpt',
                                 'models/model_Mnist_Conv_noy.ckpt',
                                 'models/model_Celeb_Conv_y.ckpt',
                                 'models/model_Celeb_Conv_noy.ckpt',
-                                'models/model_Celeb_Res_y.ckpt',
-                                'models/model_Celeb_Res_noy.ckpt',
-                                'models/model_CelebBig_Res_noy'
+                                'models/model_CelebBig_Res_noy.ckpt',
+                                'models/model_Celeb_Subpix_noy.ckpt',
+                                'models/model_Gan_Celeb_Res_noy.ckpt',
                                 ])
         self._l_start.addWidget(self.cb_model)
 
@@ -126,13 +129,15 @@ class Window(QWidget):
             model_class = ModelConv32
         elif 'Celeb_Res' in s_m:
             model_class = ModelRes32
+        elif 'Celeb_Subpix' in s_m:
+            model_class = ModelSubpix32
         elif 'CelebBig_Res' in s_m:
             model_class = ModelRes128
 
         model = model_class(batch_size=self.batch_size, z_dim=self.z_dim, y_dim=self.y_dim, is_training=False)
 
         if 'Gan' in s_m:
-            pass
+            self.solver = AaeGanSolver(model=model)
         else:
             self.solver = AaeSolver(model=model)
 
@@ -238,7 +243,6 @@ class Window(QWidget):
         l_right.addWidget(self._l_anim)
         l_right.insertStretch(-1)
 
-
     def get_sliders(self, v):
         for i, z_s in enumerate(self.z_sliders):
             self.img_z[self.curr_index][0][i] = z_s.value()/1000.
@@ -247,6 +251,8 @@ class Window(QWidget):
 
     def set_sliders(self):
         z = self.img_z[self.curr_index][0]
+        if z is None:
+            return
         for i, z_s in enumerate(self.z_sliders):
             z_s.blockSignals(True)
             z_s.setValue(float(z[i])*1000)
@@ -262,6 +268,8 @@ class Window(QWidget):
 
     def set_y(self):
         y = self.img_y[self.curr_index][0]
+        if y is None:
+            return
         for i, c_y in enumerate(self.y_checks):
             c_y.blockSignals(True)
             c_y.setChecked(bool(y[i]))
@@ -274,18 +282,14 @@ class Window(QWidget):
             return
 
         # Get Image
-        img = imread(f_name)/np.float32(256)
-        if self.dataset.name == 'Celeb':
-            img = img[:, :, :3]
-            img = np.reshape(img, [1, 32, 32, 3])
-            if self.dataset.mean_image is not None:
-                img -= self.dataset.mean_image
+        img = imread(f_name)/127.5 - 1.0
+        img = self.dataset.transform2data(img, alpha=True)
 
         self.iimg[index] = img
+
         self.img_z[index] = self.sess.run(self.solver.z_encoded, feed_dict={self.solver.x_image: img})
-        self.img_y[index] = np.array([0] * 40).reshape([1, 40])
-        if 'Mnist' in str(self.cb_model.currentText()):
-            img = np.reshape(img, [28, 28])
+        self.img_y[index] = self.dataset.sample_y()
+
         px = self.toQImage(img)
         self._l_iimg[index].setPixmap(px)
 
@@ -296,14 +300,11 @@ class Window(QWidget):
 
     def sample_random_z(self, index, clicked):
         z = self.sess.run(self.solver.z_sampled)
-        if self.dataset.name == 'Mnist':
-            y = np.random.randint(0, 10)
-            y = np.array([0 if i != y else 1 for i in range(10)]).reshape([1, 10])
-        elif self.dataset.name == 'Celeb':
-            y = np.random.randint(0, 1, [1, 40])
+        y = self.dataset.sample_y()
 
         img = self.sess.run(self.solver.x_from_z,
                             feed_dict={self.solver.z_provided: z, self.solver.y_labels: y})
+
         self.iimg[index] = img
         px = self.toQImage(img)
         self._l_iimg[index].setPixmap(px)
@@ -318,8 +319,8 @@ class Window(QWidget):
     def run_animation(self):
         self._anim_steps = 400
         self._anim_step = 0
-        dy = (self.img_y[1] - self.img_y[0])/(self._anim_steps-1)
-        dz = (self.img_z[1] - self.img_z[0])/(self._anim_steps-1)
+        dy = (self.img_y[1] - self.img_y[0])/float((self._anim_steps-1))
+        dz = (self.img_z[1] - self.img_z[0])/float((self._anim_steps-1))
         self._anim_y = [self.img_y[0] + i * dy for i in range(self._anim_steps)]
         self._anim_z = [self.img_z[0] + i * dz for i in range(self._anim_steps)]
         self._t.start()
@@ -336,27 +337,20 @@ class Window(QWidget):
     def run_decoder(self, index):
         z = self.img_z[index]
         y = self.img_y[index]
-        img = self.sess.run(self.solver.x_from_z, feed_dict={self.solver.z_provided: z, self.solver.y_labels: y})
+        img = self.sess.run(self.solver.x_from_z, feed_dict={self.solver.z_provided: z, self.solver.y_labels: y})[0]
 
         px = self.toQImage(img)
         self._l_oimg[index].setPixmap(px)
 
     def sample_random_image(self, index, clicked):
-        i = np.random.randint(0, self.dataset.test_images.shape[0])
-        img = self.dataset.test_images[i]
-        # img = np.reshape(img, [1, 784])
-        img = np.reshape(img, [1, 32, 32, 3])
-        y = self.dataset.train_labels[i]
-        # y = np.reshape(y, [1, 10])
-        y = np.reshape(y, [1, 40])
-        self.iimg[index] = img
+        img, y = self.dataset.sample_image()
+
+        self.iimg[index] = self.dataset.transform2data(img)
+
         self.img_z[index] = self.sess.run(self.solver.z_encoded,
                                           feed_dict={self.solver.x_image: img, self.solver.y_labels: y})
         self.img_y[index] = y
-        if 'Mnist' in str(self.cb_model.currentText()):
-            img = np.reshape(img, [28, 28])
 
-        img += self.dataset.mean_image
         px = self.toQImage(img)
         self._l_iimg[index].setPixmap(px)
 
@@ -365,15 +359,13 @@ class Window(QWidget):
         self.set_y()
         self.run_decoder(index)
 
-
     def toQImage(self, image):
         if self.dataset.name == 'Mnist':
-            img = np.reshape(image, [self.image_size, self.image_size])
             mode = 'L'
         elif self.dataset.name == 'Celeb':
-            image += self.dataset.mean_image
-            img = np.reshape(image, [self.image_size, self.image_size, self.image_channels])
             mode = 'RGB'
+
+        img = self.dataset.transform2display(image)
         pilimage = Image.fromarray(np.uint8(img*255), mode)
         imageq = ImageQt.ImageQt(pilimage)
         qimage = QImage(imageq)

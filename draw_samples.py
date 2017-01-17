@@ -5,7 +5,7 @@ from src.datasets import MNIST, CelebA
 from src.model_dense_mnist import ModelDenseMnist
 from src.model_conv_mnist import ModelConvMnist
 from src.model_mnist_hq import ModelHqMnist
-from src.model_conv_32 import ModelConvCeleb
+from src.model_conv_32 import ModelConv32
 from src.aae_solver import AaeSolver
 import tensorflow as tf
 
@@ -80,18 +80,21 @@ if __name__ == '__main__':
     scenario = 2
     y_dim = 10
     if scenario == 1:
+        y_dim = 10
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
-        data = MNIST(mean=False)
-        plot_samples(model, data, name='Mnist_Dense_Adam')
+        data = MNIST()
+        plot_samples(model, data, name='Mnist_Dense_y')
+    if scenario == 1:
+        y_dim = None
+        model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
+        data = MNIST()
+        plot_samples(model, data, name='Mnist_Dense_noy')
     if scenario == 2:
         model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
-        data = MNIST(mean=False)
+        data = MNIST()
         plot_samples(model, data, name='Mnist_Conv_y')
-    if scenario == 3:
-        model = ModelHqMnist(batch_size=100, z_dim=5, y_dim=y_dim, is_training=False)
-        data = MNIST(mean=False)
-        plot_samples(model, data, name='Mnist_Hq')
     if scenario == 4:
-        model = ModelConvCeleb(batch_size=128, z_dim=10, y_dim=None, is_training=False)
+        y_dim = None
+        model = ModelConv32(batch_size=128, z_dim=10, y_dim=None, is_training=False)
         data = CelebA()
-        plot_samples(model, data, name='Celeb_Conv_Adam_noy')
+        plot_samples(model, data, name='Celeb_Conv_noy')
