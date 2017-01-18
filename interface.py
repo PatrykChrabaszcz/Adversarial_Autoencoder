@@ -19,6 +19,7 @@ from src.model_conv_32 import ModelConv32
 from src.model_subpix_32 import ModelSubpix32
 from src.model_res_32 import ModelRes32
 from src.model_res_128 import ModelRes128
+from src.model_subpix_128 import ModelSubpix128
 
 
 import numpy as np
@@ -54,6 +55,7 @@ class Window(QWidget):
                                 'models/model_CelebBig_Res_noy.ckpt',
                                 'models/model_Celeb_Subpix_noy.ckpt',
                                 'models/model_Gan_Celeb_Res_noy.ckpt',
+                                'models/model_CelebBig_Subpix_noy.ckpt',
                                 ])
         self._l_start.addWidget(self.cb_model)
 
@@ -106,7 +108,7 @@ class Window(QWidget):
             self.image_size = 28
             self.image_channels = 1
         elif 'CelebBig' in s_m:
-            self.dataset = CelebBig()
+            self.dataset = CelebBig(small=True)
             self.z_dim = 128
             self.y_dim = 40
             self.image_size = 128
@@ -133,6 +135,8 @@ class Window(QWidget):
             model_class = ModelSubpix32
         elif 'CelebBig_Res' in s_m:
             model_class = ModelRes128
+        elif 'CelebBig_Subpix' in s_m:
+            model_class = ModelSubpix128
 
         model = model_class(batch_size=self.batch_size, z_dim=self.z_dim, y_dim=self.y_dim, is_training=False)
 
@@ -154,7 +158,10 @@ class Window(QWidget):
         self._w_start.hide()
 
         # Reserve a place to display input and output images
-        pix = QPixmap(self.image_size * 5, self.image_size * 5)
+        if self.image_size < 50:
+            pix = QPixmap(self.image_size * 5, self.image_size * 5)
+        else:
+            pix = QPixmap(2*self.image_size, 2*self.image_size )
         pix.fill(QColor(0, 0, 0))
 
         # Left sidebar
@@ -362,7 +369,7 @@ class Window(QWidget):
     def toQImage(self, image):
         if self.dataset.name == 'Mnist':
             mode = 'L'
-        elif self.dataset.name == 'Celeb':
+        elif 'Celeb' in self.dataset.name:
             mode = 'RGB'
 
         img = self.dataset.transform2display(image)
@@ -370,7 +377,10 @@ class Window(QWidget):
         imageq = ImageQt.ImageQt(pilimage)
         qimage = QImage(imageq)
         pix = QPixmap(qimage)
-        pix = pix.scaled(5*self.image_size, 5*self.image_size)
+        if self.image_size < 50:
+            pix = pix.scaled(5*self.image_size, 5*self.image_size)
+        else:
+            pix = pix.scaled(2*self.image_size, 2*self.image_size)
 
         return pix
 

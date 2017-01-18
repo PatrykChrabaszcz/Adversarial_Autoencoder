@@ -1,0 +1,43 @@
+Mnist Dense training with y labels and z=5, 
+Reconstruction loss 17,2 with adam 0.0002
+Reconstruction loss 15.77 with adam 0.00004
+Reconstruction loss 15.54 with adam 0.000008
+
+Mnist Dense training without y labels and z=5,
+Reconstruction loss 25.64 with adam 0.0002
+Reconstruction loss 21.64 with adam 0.00004
+ 
+Mnist Conv training with y labels and z=5,
+Reconstruction loss 23.01 with adam 0.0002
+Reconstruction loss 21.48 with adam 0.00004
+
+Mnist Conv training without y labels and z=5,
+Reconstruction loss 27.10 with adam 0.0002
+Reconstruction loss 23.05 with adam 0.00004
+
+
+Subpix noy epoch 
+Rec loss in epoch 69: 81.43 (Lost due to my mistake)
+Reconstruction loss 82.41 with adam 0.0002
+
+
+Celeb Res y 
+115.47
+
+Celeb Res noy
+90.97
+
+Celeb Conv y
+111.73
+
+Celeb Conv noy
+95
+
+
+Celeb Gan Res noy
+127,06
+
+Celeb 128
+3074.55
+module load lib/anaconda3/4.2.0
+

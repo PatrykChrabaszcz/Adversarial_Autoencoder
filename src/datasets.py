@@ -7,24 +7,49 @@ mnist_path = 'MNIST'
 
 
 class CelebBig:
-    def __init__(self):
+    def __init__(self, small=False):
         x = []
         # Read train data
-        for i in range(9):
-            xs = np.load(os.path.join(celeb_big_path, 'celeb_%d.npy' % i))/127.5 - 1.
+        if small:
+            r = 1
+        else:
+            r = 9
+        for i in range(r):
+            print("Reading CelebBig %d/9" % (i+1))
+            xs = np.float32(np.load(os.path.join(celeb_big_path, 'celeb_%d.npy' % i)))/127.5 - 1.
             x.append(xs)
 
-        x = np.concatenate(x)
+        print("Concatenate")
+        self.train_images = np.concatenate(x)
         self.name = 'CelebBig'
-        self.train_images = x
+        print("Reading done")
 
         # Those are just for compatibility, labels are messed up for this dataset (TODO: fix it)
         self.train_labels = np.concatenate([np.uint8(np.load(os.path.join(celeb_big_path, 'train_labels_32.npy'))),
                                             np.uint8(np.load(os.path.join(celeb_big_path, 'val_labels_32.npy'))),
                                             np.uint8(np.load(os.path.join(celeb_big_path, 'test_labels_32.npy')))])
 
-    def transform_back(self, image):
-        return (image+1)/2.0
+        self.train_labels = self.train_labels[:self.train_images.shape[0]]
+
+    def sample_image(self):
+        i = np.random.randint(0, self.train_images.shape[0])
+        img = np.reshape(self.train_images[i], [1, 128, 128, 3])
+
+        y = np.reshape(self.train_labels[i], [1, 40])
+        return img, y
+
+    def sample_y(self):
+        return np.array([0 for i in range(40)]).reshape([1, 40])
+
+    def transform2display(self, image):
+        image = (np.reshape(image, [128, 128, 3]) + 1) / 2.0
+        image.clip(0, 1.0)
+        return image
+
+    def transform2data(self, image, alpha=False):
+        if alpha:
+            image = image[:, :, :3]
+        return np.reshape(image, [1, 128, 128, 3])
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):
         if test:

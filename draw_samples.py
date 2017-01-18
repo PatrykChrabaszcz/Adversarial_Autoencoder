@@ -84,12 +84,12 @@ if __name__ == '__main__':
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
         data = MNIST()
         plot_samples(model, data, name='Mnist_Dense_y')
-    if scenario == 1:
+    if scenario == 2:
         y_dim = None
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
         data = MNIST()
         plot_samples(model, data, name='Mnist_Dense_noy')
-    if scenario == 2:
+    if scenario == 3:
         model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
         data = MNIST()
         plot_samples(model, data, name='Mnist_Conv_y')
