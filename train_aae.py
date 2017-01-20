@@ -7,6 +7,7 @@ from src.model_dense_mnist import ModelDenseMnist
 from src.model_conv_32 import ModelConv32
 from src.model_res_32 import ModelRes32
 from src.model_subpix_32 import ModelSubpix32
+from src.model_subpix_res32 import ModelSubpixRes32
 
 from src.model_res_128 import ModelRes128
 from src.model_subpix_128 import ModelSubpix128
@@ -42,7 +43,7 @@ def train(solver, data, name, restore=False):
         for batch_x, batch_y in data.iterate_minibatches(model.batch_size, shuffle=True):
             # Reconstruction update
             l_r, _ = sess.run([solver.rec_loss, solver.rec_optimizer],
-                              feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.rec_lr: 0.00004})
+                              feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.rec_lr: 0.0002})
             l_r /= model.batch_size
             loss_rec_sum += l_r
 
@@ -55,11 +56,11 @@ def train(solver, data, name, restore=False):
             # log(0.5) = 0.69 (Random guessing)
             if l_e < 0.95 or l_d > 0.45:
                 sess.run([solver.disc_loss, solver.disc_optimizer],
-                         feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.disc_lr: 0.00004})
+                         feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.disc_lr: 0.0002})
             # Encoder update
             if l_d < 0.95 or l_e > 0.45:
                 sess.run(solver.enc_optimizer,
-                         feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.enc_lr: 0.00004})
+                         feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y, solver.enc_lr: 0.0002})
             if steps % 10 == 0:
                 print("step %d, Current loss: Rec %.4f, Disc %.4f, Enc %.4f" % (steps, l_r, l_d, l_e), end='\r')
             steps += 1
@@ -75,7 +76,7 @@ def train(solver, data, name, restore=False):
 
 
 if __name__ == '__main__':
-    scenario = 10
+    scenario = 12
     mnist_z_dim = 5
     celeb_z_dim = 50
     celebbig_z_dim = 128
@@ -180,6 +181,16 @@ if __name__ == '__main__':
         data = CelebA()
         train(solver, data, name='Celeb_Subpix_noy', restore=True)
 
+    elif scenario == 12:
+        y_dim = None
+        celeb_z_dim = 128
+        model = ModelSubpixRes32(batch_size=128, z_dim=celeb_z_dim, y_dim=y_dim)
+        solver = AaeSolver(model=model)
+        print("Number of parameters in model %d" % count_params())
+        data = CelebA()
+        train(solver, data, name='Celeb_SubpixRes_noy', restore=False)
+
+
     # CELEB_BIG++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     # # CelebBig resnet with y labels
@@ -191,7 +202,7 @@ if __name__ == '__main__':
     #     train(solver, data, name='Celeb_Res_y', restore=True)
 
     # CelebBig resnet without y labels
-    elif scenario == 12:
+    elif scenario == 14:
         y_dim = None
         model = ModelRes128(batch_size=128, z_dim=celebbig_z_dim, y_dim=y_dim)
         solver = AaeSolver(model=model)
@@ -200,7 +211,7 @@ if __name__ == '__main__':
         train(solver, data, name='CelebBig_Res_noy', restore=False)
 
     # CelebBig subpix without y labels
-    elif scenario == 14:
+    elif scenario == 16:
         y_dim = None
         print('Creating model')
         model = ModelSubpix128(batch_size=32, z_dim=celebbig_z_dim, y_dim=y_dim)

@@ -17,27 +17,25 @@ Reconstruction loss 23.05 with adam 0.00004
 
 
 Subpix noy epoch 
-Rec loss in epoch 69: 81.43 (Lost due to my mistake)
 Reconstruction loss 82.41 with adam 0.0002
-
+Reconstruction loss 78.76 with adam 0.00004
 
 Celeb Res y 
-115.47
+105.7
 
 Celeb Res noy
-90.97
+85.34
 
 Celeb Conv y
-111.73
+110.73
 
 Celeb Conv noy
-95
+93.35
 
 
 Celeb Gan Res noy
-127,06
+102.23
 
 Celeb 128
-3074.55
-module load lib/anaconda3/4.2.0
+1836.60
 
