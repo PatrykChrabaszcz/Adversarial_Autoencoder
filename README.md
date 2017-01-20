@@ -9,12 +9,13 @@ Tensorflow implementation of [Adversarial Autoencoder](https://arxiv.org/abs/151
 
 ![model](images/AAE.png)
 
+(TODO: Add AAE description)
+
+
 ## Enviroment
 
 - Python 3.5.2
 - TensorFlow 0.12.1
-
-(TODO: Add AAE description)
 
 ## Scenarios
 
@@ -40,16 +41,17 @@ dataset are compressed to 50 dimensions.
 ### 1,2 Autoencoder is trained on MNIST data using network with fully connected layers. 
 
 Animations created by sampling latent variables from uniform grid in 4 dimensions, 5th dimension
-is represented as time. First two images come from scenario 1, and are conditioned by y variable 
-(4 and 8 in this case), third image comes from scenario 3
-(Note: Not all browsers support .apng format)
+is represented as time.
 
-![mnist_8](images/Mnist_Dense_8_z3.apng)![mnist_4](images/Mnist_Dense_4_z3.apng)![mnist_noy](images/Mnist_noy_z3.apng)
+
+(Note: Not all browsers support .apng format. Hint: Use firefox)
+
+
+![mnist_0](images/Mnist_Dense_y/Mnist_Dense_0.apng) ![mnist_1](images/Mnist_Dense_y/Mnist_Dense_1.apng) ![mnist_2](images/Mnist_Dense_y/Mnist_Dense_2.apng) ![mnist_3](images/Mnist_Dense_y/Mnist_Dense_3.apng) ![mnist_4](images/Mnist_Dense_y/Mnist_Dense_4.apng) ![mnist_5](images/Mnist_Dense_y/Mnist_Dense_5.apng) ![mnist_6](images/Mnist_Dense_y/Mnist_Dense_6.apng) ![mnist_7](images/Mnist_Dense_y/Mnist_Dense_7.apng) ![mnist_8](images/Mnist_Dense_y/Mnist_Dense_8.apng) ![mnist_9](images/Mnist_Dense_y/Mnist_Dense_9.apng)
 
 Images preserve "style" after applying changing conditioning label.
 
-![style1](images/Mnist_y_style1.apng) ![style2](images/Mnist_y_style2.apng) ![style3](images/Mnist_y_style3.apng)
-
+![style1](images/Mnist_Dense_y/Mnist_Dense_style1.apng) ![style2](images/Mnist_Dense_y/Mnist_Dense_style2.apng) ![style3](images/Mnist_Dense_y/Mnist_Dense_style3.apng)
 
 3. 4. Same as scenario 1 but we use convolutional neural network in both encoder 
 and decoder. 
