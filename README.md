@@ -46,12 +46,19 @@ is represented as time.
 
 (Note: Not all browsers support .apng format. Hint: Use firefox)
 
+Traversing dimension z_3 with different class labels (Network from scenario 1):
 
 ![mnist_0](images/Mnist_Dense_y/Mnist_Dense_0.apng) ![mnist_1](images/Mnist_Dense_y/Mnist_Dense_1.apng) ![mnist_2](images/Mnist_Dense_y/Mnist_Dense_2.apng) ![mnist_3](images/Mnist_Dense_y/Mnist_Dense_3.apng) ![mnist_4](images/Mnist_Dense_y/Mnist_Dense_4.apng) ![mnist_5](images/Mnist_Dense_y/Mnist_Dense_5.apng) ![mnist_6](images/Mnist_Dense_y/Mnist_Dense_6.apng) ![mnist_7](images/Mnist_Dense_y/Mnist_Dense_7.apng) ![mnist_8](images/Mnist_Dense_y/Mnist_Dense_8.apng) ![mnist_9](images/Mnist_Dense_y/Mnist_Dense_9.apng)
 
-Images preserve "style" after applying changing conditioning label.
+Images preserve "style" after changing class label (Network from scenario 1):
 
 ![style1](images/Mnist_Dense_y/Mnist_Dense_style1.apng) ![style2](images/Mnist_Dense_y/Mnist_Dense_style2.apng) ![style3](images/Mnist_Dense_y/Mnist_Dense_style3.apng)
+
+
+Traversing through different dimensions of latent representation (Network from scenario 2):
+
+![mnist_z0](images/Mnist_Dense_noy/Mnist_Dense_z0.apng) ![mnist_z1](images/Mnist_Dense_noy/Mnist_Dense_z1.apng) ![mnist_z2](images/Mnist_Dense_noy/Mnist_Dense_z2.apng) ![mnist_z3](images/Mnist_Dense_noy/Mnist_Dense_z3.apng) ![mnist_z4](images/Mnist_Dense_noy/Mnist_Dense_z4.apng) 
+
 
 3. 4. Same as scenario 1 but we use convolutional neural network in both encoder 
 and decoder. 
