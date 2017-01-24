@@ -1,9 +1,59 @@
 import numpy as np
 import os
 import sys
+from scipy.ndimage.interpolation import rotate
 celeb_path = 'CELEB'
 celeb_big_path = 'CELEB_BIG'
 mnist_path = 'MNIST'
+cell_path = 'CELL'
+
+
+class Cell:
+
+    def __init__(self):
+        self.train_images = np.uint8(np.load(os.path.join(cell_path, 'cell_x.npy')))/256.
+        #self.train_rec = np.uint8(np.load(os.path.join(cell_path, 'cell_x_masked.npy')))/256.
+        self.train_labels = np.array([[0]] * self.train_images.shape[0])
+        self.name = 'Cell'
+
+    def sample_image(self):
+        i = np.random.randint(0, self.train_images.shape[0])
+        img = self.train_images[i]
+
+        y = [0]
+        return img, y
+
+    def sample_y(self):
+        return [0]
+
+    def transform2display(self, image):
+        image = np.resize(image, [64, 64])
+        return image
+
+    def transform2data(self, image):
+        return np.resize(image, [1, 4096])
+
+    def iterate_minibatches(self, batchsize, shuffle=False, test=False):
+
+        inputs = []
+        for i in range(50):
+            for img in self.train_images:
+                img = rotate(img.reshape([64,64]), np.random.uniform(0.0, 360.0), reshape=False,
+                             mode='nearest', prefilter=False)
+                inputs.append(img.reshape([1, 4096]))
+
+        inputs = np.concatenate(inputs)
+        targets = np.tile(self.train_labels, [50, 1])
+
+        if shuffle:
+            indices = np.arange(len(inputs))
+            np.random.shuffle(indices)
+        for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
+            if shuffle:
+                excerpt = indices[start_idx:start_idx + batchsize]
+            else:
+                excerpt = slice(start_idx, start_idx + batchsize)
+            yield (inputs[excerpt], targets[excerpt])
 
 
 class CelebBig:
@@ -100,13 +150,14 @@ class CelebA:
     def sample_y(self):
         return np.array([0 for i in range(40)]).reshape([1, 40])
 
-    def transform2display(self, image):
-        print(image.shape)
+    @staticmethod
+    def transform2display(image):
         image = (np.reshape(image, [32, 32, 3]) + 1) / 2.0
         image.clip(0, 1.0)
         return image
 
-    def transform2data(self, image, alpha=False):
+    @staticmethod
+    def transform2data(image, alpha=False):
         if alpha:
             image = image[:, :, :3]
         return np.reshape(image, [1, 32, 32, 3])
@@ -161,11 +212,13 @@ class MNIST:
         y = np.random.randint(0, 10)
         return np.array([0 if i != y else 1 for i in range(10)]).reshape([1, 10])
 
-    def transform2display(self, image):
+    @staticmethod
+    def transform2display(image):
         image = np.resize(image, [28, 28])
         return image
 
-    def transform2data(self, image):
+    @staticmethod
+    def transform2data(image):
         return np.resize(image, [1, 784])
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):

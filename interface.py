@@ -12,13 +12,12 @@ from src.aae_solver import AaeSolver
 from src.aae_gan_solver import AaeGanSolver
 
 from src.datasets import MNIST, CelebA, CelebBig
-from src.model_dense_mnist import ModelDenseMnist
-from src.model_conv_mnist import ModelConvMnist
 
+from src.model_dense_mnist import ModelDenseMnist
 from src.model_conv_32 import ModelConv32
 from src.model_subpix_32 import ModelSubpix32
-from src.model_res_32 import ModelRes32
-from src.model_res_128 import ModelRes128
+from src.model_subpix_res32 import ModelSubpixRes32
+
 from src.model_subpix_128 import ModelSubpix128
 
 
@@ -44,18 +43,21 @@ class Window(QWidget):
         self._l_start.addWidget(l_model)
 
         self.cb_model = QComboBox(self._w_start)
-        self.cb_model.addItems(['models/model_Celeb_Res_y.ckpt',
-                                'models/model_Celeb_Res_noy.ckpt',
-                                'models/model_Mnist_Dense_y.ckpt',
+        self.cb_model.addItems(['models/model_Mnist_Dense_y.ckpt',
                                 'models/model_Mnist_Dense_noy.ckpt',
-                                'models/model_Mnist_Conv_y.ckpt',
-                                'models/model_Mnist_Conv_noy.ckpt',
                                 'models/model_Celeb_Conv_y.ckpt',
                                 'models/model_Celeb_Conv_noy.ckpt',
-                                'models/model_CelebBig_Res_noy.ckpt',
+                                'models/model_Celeb_Subpix_y.ckpt',
                                 'models/model_Celeb_Subpix_noy.ckpt',
-                                'models/model_Gan_Celeb_Res_noy.ckpt',
+                                'models/model_Celeb_SubpixRes_y.ckpt',
+                                'models/model_Celeb_SubpixRes_noy.ckpt',
+                                'models/model_CelebBig_Subpix_y.ckpt',
                                 'models/model_CelebBig_Subpix_noy.ckpt',
+                                'models/model_Cell_Dense_noy.ckpt',
+                                'models/model_Gan_Mnist_Dense_noy.ckpt',
+                                'models/model_Gan_Mnist_Dense_noy_test.ckpt',
+                                'models/model_Gan_Mnist_Dense_noy_balanced.ckpt',
+                                'models/model_Gan_Mnist_Dense_noy_balanced_bigger.ckpt'
                                 ])
         self._l_start.addWidget(self.cb_model)
 
@@ -125,16 +127,14 @@ class Window(QWidget):
 
         if 'Mnist_Dense' in s_m:
             model_class = ModelDenseMnist
-        elif 'Mnist_Conv' in s_m:
-            model_class = ModelConvMnist
+        elif 'SubpixRes' in s_m:
+            model_class = ModelSubpixRes32
         elif 'Celeb_Conv' in s_m:
             model_class = ModelConv32
-        elif 'Celeb_Res' in s_m:
-            model_class = ModelRes32
         elif 'Celeb_Subpix' in s_m:
             model_class = ModelSubpix32
-        elif 'CelebBig_Res' in s_m:
-            model_class = ModelRes128
+        elif 'CelebBig_Subpix' in s_m:
+            model_class = ModelSubpix128
         elif 'CelebBig_Subpix' in s_m:
             model_class = ModelSubpix128
 

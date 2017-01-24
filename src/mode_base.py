@@ -22,6 +22,10 @@ class ModelBase:
     def decoder(self, z, reuse=False):
         pass
 
+    # Has to be implemented in subclass
+    def gan(self, x_image, reuse=False):
+        pass
+
     def discriminator(self, z, reuse=False):
         with tf.variable_scope('discriminator') as scope:
             if reuse:

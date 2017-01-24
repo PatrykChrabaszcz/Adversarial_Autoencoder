@@ -12,7 +12,9 @@ def conv(input, filter_size, stride, out_channels, name):
                         initializer=xavier_initializer())
     b = tf.get_variable('b_%s' % name, shape=[out_channels],
                         initializer=tf.constant_initializer(0))
-    c_i = tf.nn.conv2d(input, w, strides=[1, stride, stride, 1], padding="SAME") + b
+    c_i = tf.nn.conv2d(input, w, strides=[1, stride, stride, 1], padding="SAME")
+    c_i = tf.reshape(tf.nn.bias_add(c_i, b), c_i.get_shape())
+
     return c_i
 
 
@@ -35,6 +37,7 @@ def tconv(input, filter_size, stride, batch_size, out_channels, name):
                         initializer=tf.constant_initializer(0))
     c_i = tf.nn.conv2d_transpose(input, w, output_shape=[batch_size, out_size, out_size, out_channels],
                                  strides=[1, stride, stride, 1])
+    c_i = tf.reshape(tf.nn.bias_add(c_i, b), c_i.get_shape())
     return c_i
 
 

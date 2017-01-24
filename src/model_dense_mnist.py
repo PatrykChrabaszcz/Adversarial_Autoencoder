@@ -33,3 +33,36 @@ class ModelDenseMnist(ModelBase):
             c_i = lin(c_i, self.input_dim, name="dec_out")
             x_reconstructed = tf.nn.sigmoid(c_i)
             return x_reconstructed
+
+    def features(self, x_image, reuse):
+        with tf.variable_scope('gan') as scope:
+            if reuse:
+                scope.reuse_variables()
+            c_i = x_image
+
+
+            c_i = lin(c_i, 784, name="gan_dens_%d" % 0)
+            c_i = tf.maximum(0.2 * c_i, c_i)
+            c_i = lin(c_i, 784, name="gan_dens_%d" % 1)
+            c_i = tf.maximum(0.2 * c_i, c_i)
+            c_i = lin(c_i, 784, name="gan_dens_%d" % 2)
+
+            features = c_i
+            return features
+
+    def gan(self, x_image, reuse):
+
+        with tf.variable_scope('gan') as scope:
+            if reuse:
+                scope.reuse_variables()
+            c_i = x_image
+
+            c_i = lin(c_i, 784, name="gan_dens_%d" % 0)
+            c_i = tf.maximum(0.2 * c_i, c_i)
+            c_i = lin(c_i, 784, name="gan_dens_%d" % 1)
+            c_i = tf.maximum(0.2 * c_i, c_i)
+            c_i = lin(c_i, 784, name="gan_dens_%d" % 2)
+            c_i = tf.maximum(0.2 * c_i, c_i)
+            y = lin(c_i, 1, name="gan_out")
+
+            return y

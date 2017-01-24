@@ -27,7 +27,7 @@ class AaeSolver:
         self.rec_loss = tf.reduce_sum(tf.square(self.x_reconstructed - self.x_image))
 
         t_vars = tf.trainable_variables()
-        rec_vars = [var for var in t_vars if 'dec' or 'enc' in var.name]
+        rec_vars = [var for var in t_vars if 'dec' in var.name or 'enc' in var.name]
 
         self.rec_optimizer = tf.train.AdamOptimizer(learning_rate=self.rec_lr, beta1=0.5).\
             minimize(self.rec_loss, var_list=rec_vars)
