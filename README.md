@@ -6,11 +6,15 @@ This project was developed as part of Deep Learning course.
 It contains tensorflow implementation of [Adversarial Autoencoder](https://arxiv.org/abs/1511.05644).
 
 Adversarial Autoencoder is a little bit different than standard autoencoder. Plain autoencoder takes its input and forwards it through neural network creating latent representation (Let's call it 'z'). Usually dimensionality of 'z' is smaller than dimensionality of input, this way network needs to learn meaningfull representations. Latent representation has to carry usefull information needed to recover image. Second part of network, decoder takes this representation and tries to recover original input. In standard autoencoder we don't care what range of values 'z' takes, so optimization procedure will span 'z' as it finds it best to minimize it's training loss. Distribution will be formed from encoded training samples (set of Enc(x) for all training x) and it can take arbitrary shape.
+
+
 Adversarial Autoencoder puts additional constraint on 'z'. We force encoder to map input 'x' to distribution of our choice. This way we can later sample or traverse this distribution and generate reconstructions. Turns out that we can interpret moving in latent space as adding/removing features from reconstruction.
 
 
 ![model](images/AAE.png)
+
 Image from original paper
+
 
 To achieve our goal we introduce additional neural network, discriminator that will take 'z' produced by encoder and 'z' sampled from desired distribution as input, we will train it to make correct predictions about source distribution. Using gradients from discriminator we will additionaly train encoder so it learns how to fool discriminator in addition to producing meaningful representation of 'z' needed by decoder. We will try to keep different optimization objectives in ballance, mainly we will stop discriminator from training if it gets to good until encoder catches up. 
 
