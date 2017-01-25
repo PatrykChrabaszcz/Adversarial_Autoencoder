@@ -1,15 +1,16 @@
 # Adversarial Autoencoder
 University of Freiburg
 
+This project was developed as part of Deep Learning course.
 
-Deep Learning Lab final project
+It contains tensorflow implementation of [Adversarial Autoencoder](https://arxiv.org/abs/1511.05644).
 
+Adversarial Autoencoder 
 
-Tensorflow implementation of [Adversarial Autoencoder](https://arxiv.org/abs/1511.05644).
 
 ![model](images/AAE.png)
 
-(TODO: Add AAE description)
+
 
 
 ## Enviroment
@@ -19,14 +20,7 @@ Tensorflow implementation of [Adversarial Autoencoder](https://arxiv.org/abs/151
 
 ## Scenarios
 
-In all experiments batch norm is used both in encoder and decoder network, discriminator
-network does not use batch norm. Leaky ReLU with 0.2 leak was chosen as an activation.
-Odd scenario number indicates that network was trained using additional data, for MNIST
-it means that vector with latent representation was concatenated with y label (One hot 
-encoded) before it was feed into decoder and discriminator. Every model uses the same
-discrimination network, 2 hidden layers with 500 neurons in each, output with one sigmoid
-unit. Gaussian normal distribution with 0 mean and unit variance is used to sample from 
-latent space with constraint that samples have maximum magnitude of 2 standard deviations. 
+In all experiments batch norm is used both in encoder and decoder network, discriminator network does not use batch norm. Leaky ReLU with 0.2 leak was chosen as an activation. Odd scenario number indicates that network was trained using additional data, for MNIST it means that vector with latent representation was concatenated with y label (One hot  encoded) before it was feed into decoder and discriminator. Every model uses the same discrimination network, 2 hidden layers with 500 neurons in each, output with one sigmoid unit. Gaussian normal distribution with 0 mean and unit variance is used to sample from latent space with constraint that samples have maximum magnitude of 2 standard deviations. 
 
 
 Adam optimizer was used for training with learning rate of 0.0002. When no further improvement
