@@ -1,5 +1,5 @@
 import tensorflow as tf
-from src.utils import lin
+from src.utils import lin, lin_lrelu
 
 
 class ModelBase:
@@ -23,7 +23,7 @@ class ModelBase:
         pass
 
     # Has to be implemented in subclass
-    def gan(self, x_image, reuse=False):
+    def gan(self, x_image, reuse=False, features=False):
         pass
 
     def discriminator(self, z, reuse=False):
@@ -35,10 +35,8 @@ class ModelBase:
             if self.y_dim:
                 c_i = tf.concat(1, [z, self.y_labels])
 
-            neuron_numbers = [500, 500]
-            for i, n in enumerate(neuron_numbers):
-                c_i = lin(c_i, n, name="disc_dens_%d" % i)
-                c_i = tf.maximum(0.2 * c_i, c_i)
+            c_i = lin_lrelu(c_i, 500, name="disc_dens_%d" % 0)
+            c_i = lin_lrelu(c_i, 500, name="disc_dens_%d" % 1)
 
             y = lin(c_i, 1, name="disc_out")
 

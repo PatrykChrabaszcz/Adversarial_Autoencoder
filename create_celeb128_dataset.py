@@ -2,7 +2,7 @@ import os
 from scipy.misc import imread
 import numpy as np
 
-# Path to folder with images
+# Create Celeb 128x128 images
 path = '/home/chrabasp/Download/img_align_celeba'
 
 
@@ -25,12 +25,12 @@ def crop_folder():
 
         if not i % 25000:
             images = np.array(images)
-            np.save('celeb_%d.npy' % num, images)
+            np.save('CELEB_BIG/celeb_%d.npy' % num, images)
             num += 1
             images = []
 
     images = np.array(images)
-    np.save('celeb_%d.npy' % num, images)
+    np.save('CELEB_BIG/celeb_%d.npy' % num, images)
     print('Done')
 
 

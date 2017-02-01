@@ -1,6 +1,10 @@
 import os
 from scipy.misc import imread
 import numpy as np
+
+
+# Create Cell dataset from images of 'Brightfield_Pollen'
+
 names = [
     'Brightfield_Microspores',
     'Brightfield_Pollen',

@@ -1,7 +1,7 @@
 from src.mode_base import ModelBase
 
 import tensorflow as tf
-from src.utils import lin, lin_relu_bn
+from src.utils import lin, lin_bn_lrelu
 
 
 class ModelDenseMnist(ModelBase):
@@ -13,8 +13,8 @@ class ModelDenseMnist(ModelBase):
 
     def encoder(self):
         c_i = self.x_image
-        for i, n in enumerate(self.neuron_numbers):
-            c_i = lin_relu_bn(c_i, n, self.bn_settings,  name="enc_dens_%d" % i)
+        c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="enc_dens_%d" % 0)
+        c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="enc_dens_%d" % 1)
 
         z = lin(c_i, self.z_dim, name="enc_out")
         return z
@@ -27,42 +27,25 @@ class ModelDenseMnist(ModelBase):
 
             if reuse:
                 scope.reuse_variables()
-            for i, n in enumerate(self.neuron_numbers[::-1]):
-                c_i = lin_relu_bn(c_i, n, self.bn_settings, name="dec_dens_%d" % i)
+
+            c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="dec_dens_%d" % 0)
+            c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="dec_dens_%d" % 1)
 
             c_i = lin(c_i, self.input_dim, name="dec_out")
             x_reconstructed = tf.nn.sigmoid(c_i)
             return x_reconstructed
 
-    def features(self, x_image, reuse):
-        with tf.variable_scope('gan') as scope:
-            if reuse:
-                scope.reuse_variables()
-            c_i = x_image
-
-
-            c_i = lin(c_i, 784, name="gan_dens_%d" % 0)
-            c_i = tf.maximum(0.2 * c_i, c_i)
-            c_i = lin(c_i, 784, name="gan_dens_%d" % 1)
-            c_i = tf.maximum(0.2 * c_i, c_i)
-            c_i = lin(c_i, 784, name="gan_dens_%d" % 2)
-
-            features = c_i
-            return features
-
-    def gan(self, x_image, reuse):
+    def gan(self, x_image, reuse=False, features=False):
 
         with tf.variable_scope('gan') as scope:
             if reuse:
                 scope.reuse_variables()
             c_i = x_image
 
-            c_i = lin(c_i, 784, name="gan_dens_%d" % 0)
-            c_i = tf.maximum(0.2 * c_i, c_i)
-            c_i = lin(c_i, 784, name="gan_dens_%d" % 1)
-            c_i = tf.maximum(0.2 * c_i, c_i)
-            c_i = lin(c_i, 784, name="gan_dens_%d" % 2)
-            c_i = tf.maximum(0.2 * c_i, c_i)
-            y = lin(c_i, 1, name="gan_out")
+            c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="gan_dens_%d" % 0)
+            if features:
+                return c_i
+            c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="gan_dens_%d" % 1)
+            y = lin(c_i, 1, "gan_out")
 
             return y
