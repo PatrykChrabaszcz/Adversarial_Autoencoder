@@ -19,8 +19,8 @@ class ModelConvMnist(ModelBase):
         c_i = tf.reshape(c_i, shape=[self.batch_size, 28, 28, 1])
         # Now c_i has shape batch_size x 28 x 28 x 1
 
-        c_i = conv(c_i, filter_size=3, stride=1, out_channels=16, name="enc_conv_1")
-        # Now c_i has shape batch_size x 28 x 28 x 16
+        c_i = conv(c_i, 3, 1, 16*self.k, name="enc_conv_1")
+        # Now c_i has shape batch_size x 28 x 28 x 16*k
 
         c_i = bn_lrelu_conv(c_i, 4, 2, 32*self.k, self.bn_settings, name="enc_conv_2")
         # Now c_i has shape batch_size x 14 x 14 x 32*k
@@ -54,15 +54,17 @@ class ModelConvMnist(ModelBase):
                                  self.bn_settings, name="dec_tconv_2")
             # Now c_i has shape batch_size x 14 x 14 x 32*k
 
-            c_i = bn_lrelu_tconv(c_i, 4, 2, self.batch_size, 1,
-                                 self.bn_settings, name="dec_tconv_fin")
-            # Now c_i has shape batch_size x 28 x 28 x 1
-
+            c_i = bn_lrelu_tconv(c_i, 4, 2, self.batch_size, 16*self.k,
+                                 self.bn_settings, name="dec_tconv_3")
+            # Now c_i has shape batch_size x 28 x 28 x 16*k
+            c_i = bn_lrelu_conv(c_i, 3, 1, 1,
+                                self.bn_settings, name="dec_conv_fin")
             c_i = tf.reshape(c_i, shape=[self.batch_size, 784])
             y_image = tf.nn.sigmoid(c_i)
             return y_image
 
     def gan(self, x_image, reuse=False, features=False):
+        f = []
         with tf.variable_scope('gan') as scope:
             if reuse:
                 scope.reuse_variables()
@@ -71,10 +73,14 @@ class ModelConvMnist(ModelBase):
             c_i = tf.reshape(c_i, shape=[self.batch_size, 28, 28, 1])
             # Now c_i has shape batch_size x 28 x 28 x 1
 
+            c_i = conv(c_i, 3, 1, 16 * self.k, name="enc_conv_1")
+            # Now c_i has shape batch_size x 28 x 28 x 16*k
+
             c_i = bn_lrelu_conv(c_i, 4, 2, 32 * self.k, self.bn_settings, name="gan_conv_1")
             # Now c_i has shape batch_size x 14 x 14 x 32*k
+            f.append(c_i)
             if features:
-                return c_i
+                return f
             c_i = bn_lrelu_conv(c_i, 4, 2, 64 * self.k, self.bn_settings, name="gan_conv_2")
             # Now c_i has shape batch_size x 7 x 7 x 64*k
 

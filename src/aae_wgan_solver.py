@@ -62,19 +62,19 @@ class AaeWGanSolver:
 
         t_vars = tf.trainable_variables()
         gan_d_vars = [var for var in t_vars if 'gan' in var.name]
-        self.gan_d_optimizer = tf.train.RMSPropOptimizer(learning_rate=self.gan_d_lr, decay=0.5).\
+        self.gan_d_optimizer = tf.train.RMSPropOptimizer(learning_rate=self.gan_d_lr).\
             minimize(self.gan_d_loss, var_list=gan_d_vars)
 
         self.clip_gan_d = []
         for var in gan_d_vars:
-            self.clip_gan_d.append(tf.assign(var, tf.clip_by_value(var, -0.05, 0.05)))
+            self.clip_gan_d.append(tf.assign(var, tf.clip_by_value(var, -0.01, 0.01)))
 
         # Gan Generator
         self.gan_g_loss = tf.reduce_mean(gan_sam_pred)
 
         t_vars = tf.trainable_variables()
         gan_g_vars = [var for var in t_vars if 'dec' in var.name]
-        self.gan_g_optimizer = tf.train.RMSPropOptimizer(learning_rate=self.gan_g_lr, decay=0.5). \
+        self.gan_g_optimizer = tf.train.RMSPropOptimizer(learning_rate=self.gan_g_lr). \
             minimize(self.gan_g_loss, var_list=gan_g_vars)
 
         # Reconstruction
@@ -87,5 +87,5 @@ class AaeWGanSolver:
         t_vars = tf.trainable_variables()
         rec_vars = [var for var in t_vars if 'dec' in var.name or 'enc' in var.name]
 
-        self.rec_optimizer = tf.train.RMSPropOptimizer(learning_rate=self.rec_lr, decay=0.5).\
+        self.rec_optimizer = tf.train.RMSPropOptimizer(learning_rate=self.rec_lr).\
             minimize(self.rec_loss, var_list=rec_vars)

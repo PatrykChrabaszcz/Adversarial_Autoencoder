@@ -12,14 +12,16 @@ from src.aae_solver import AaeSolver
 from src.aae_gan_solver import AaeGanSolver
 from src.aae_wgan_solver import AaeWGanSolver
 
-from src.datasets import MNIST, CelebA, CelebBig
+from src.datasets import MNIST, CelebA, CelebBig, Cell
 
 from src.model_dense_mnist import ModelDenseMnist
 from src.model_conv_mnist import ModelConvMnist
 from src.model_conv_32 import ModelConv32
 from src.model_subpix_32 import ModelSubpix32
 
-from src.model_subpix_128 import ModelSubpix128
+from src.model_conv_128 import ModelConv128
+
+from src.model_conv_64 import ModelConv64
 
 
 import numpy as np
@@ -45,16 +47,23 @@ class Window(QWidget):
 
         self.cb_model = QComboBox(self._w_start)
         self.cb_model.addItems(['models/model_Mnist_Dense_y.ckpt',
-                                'models/model_WGan_Mnist_Dense_y.ckpt',
                                 'models/model_Mnist_Dense_noy.ckpt',
+
                                 'models/model_Mnist_Conv_y.ckpt',
-                                'models/model_Mnist_Conv_y_pretrainGan.ckpt',
                                 'models/model_Gan_Mnist_Conv_y.ckpt',
-                                'models/model_Celeb_Conv_noy.ckpt',
-                                'models/model_Celeb_Subpix.ckpt',
-                                'models/model_Celeb_Gan_Subpix_noy.ckpt',
-                                'models/model_CelebBig_Subpix_noy.ckpt',
-                                'models/model_Cell_Dense_noy.ckpt'
+
+                                'models/model_Celeb_Conv_4_noy.ckpt',
+                                'models/model_Celeb_Subpix_4_noy.ckpt',
+
+                                'models/model_Gan_Celeb_Subpix_4_noy.ckpt',
+                                'models/model_Gan_Celeb_Conv_4_noy.ckpt',
+
+                                'models/model_Gan_Celeb_Conv_4_noy_new.ckpt',
+
+                                'models/model_CelebBig_noy.ckpt',
+                                'models/model_Cell_Conv_noy.ckpt',
+
+                                'models/model_Gan_Celeb_Conv_4_noy_S1.ckpt'
                                 ])
         self._l_start.addWidget(self.cb_model)
 
@@ -107,7 +116,7 @@ class Window(QWidget):
             self.image_size = 28
             self.image_channels = 1
         elif 'CelebBig' in s_m:
-            self.dataset = CelebBig(small=True)
+            self.dataset = CelebBig()
             self.z_dim = 128
             self.y_dim = 40
             self.image_size = 128
@@ -118,36 +127,40 @@ class Window(QWidget):
             self.y_dim = 40
             self.image_size = 32
             self.image_channels = 3
+        elif 'Cell' in s_m:
+            self.dataset = Cell()
+            self.z_dim = 50
+            self.y_dim = None
+            self.image_size = 64
+            self.image_channels = 1
 
         if 'noy' in s_m:
             self.y_dim = None
 
         if 'Mnist_Dense' in s_m:
             model_class = ModelDenseMnist
-        if 'Mnist_Conv' in s_m:
+        elif 'Mnist_Conv' in s_m:
             model_class = ModelConvMnist
-        elif 'SubpixRes' in s_m:
-            model_class = ModelSubpixRes32
         elif 'Celeb_Conv' in s_m:
             model_class = ModelConv32
-        elif 'Celeb_Gan_Subpix' in s_m:
-            model_class = ModelSubpix32
         elif 'Celeb_Subpix' in s_m:
             model_class = ModelSubpix32
             self.y_dim = None
-        elif 'CelebBig_Subpix' in s_m:
-            model_class = ModelSubpix128
-        elif 'CelebBig_Subpix' in s_m:
-            model_class = ModelSubpix128
+        elif 'CelebBig' in s_m:
+            model_class = ModelConv128
+        elif 'CelebBig' in s_m:
+            model_class = ModelConv128
+        elif 'Cell' in s_m:
+            model_class = ModelConv64
 
         model = model_class(batch_size=self.batch_size, z_dim=self.z_dim, y_dim=self.y_dim, is_training=False)
-
-        if 'WGan' in s_m:
-            self.solver = AaeWGanSolver(model=model)
-        elif 'Gan' in s_m:
-            self.solver = AaeGanSolver(model=model)
-        else:
-            self.solver = AaeSolver(model=model)
+        #
+        # if 'WGan' in s_m:
+        #     self.solver = AaeWGanSolver(model=model)
+        # elif 'Gan' in s_m:
+        #     self.solver = AaeGanSolver(model=model)
+        # else:
+        self.solver = AaeSolver(model=model)
 
         self.sess.run(tf.global_variables_initializer())
         # Saver
@@ -162,10 +175,8 @@ class Window(QWidget):
         self._w_start.hide()
 
         # Reserve a place to display input and output images
-        if self.image_size < 50:
-            pix = QPixmap(self.image_size * 5, self.image_size * 5)
-        else:
-            pix = QPixmap(2*self.image_size, 2*self.image_size )
+
+        pix = QPixmap(2*self.image_size, 2*self.image_size )
         pix.fill(QColor(0, 0, 0))
 
         # Left sidebar
@@ -371,20 +382,18 @@ class Window(QWidget):
         self.run_decoder(index)
 
     def toQImage(self, image):
-        if self.dataset.name == 'Mnist':
-            mode = 'L'
-        elif 'Celeb' in self.dataset.name:
+        if 'Celeb' in self.dataset.name:
             mode = 'RGB'
+        else:
+            mode = 'L'
 
         img = self.dataset.transform2display(image)
         pilimage = Image.fromarray(np.uint8(img*255), mode)
         imageq = ImageQt.ImageQt(pilimage)
         qimage = QImage(imageq)
         pix = QPixmap(qimage)
-        if self.image_size < 50:
-            pix = pix.scaled(5*self.image_size, 5*self.image_size)
-        else:
-            pix = pix.scaled(2*self.image_size, 2*self.image_size)
+
+        pix = pix.scaled(2*self.image_size, 2*self.image_size)
 
         return pix
 

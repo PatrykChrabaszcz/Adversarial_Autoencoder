@@ -7,7 +7,8 @@ class ModelBase:
         self.batch_size = batch_size
         self.z_dim = z_dim
         self.y_dim = y_dim
-        self.y_labels = tf.placeholder(tf.float32, [batch_size, y_dim], name='y_labels')
+        self.y_labels = tf.placeholder(tf.float32, [batch_size, y_dim],
+                                       name='y_labels')
         self.bn_settings = {'decay': 0.9,
                             'updates_collections': None,
                             'scale': True,

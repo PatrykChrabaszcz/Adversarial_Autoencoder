@@ -7,6 +7,12 @@ Reconstruction loss 15.54 with adam 0.000008
 0.00004 -> 0.023410
 After RMSProp -> 0.022315
 
+Reconstruction Lost 0.024178
+Discrimination Lost 0.693033
+Encoder Lost 0.693788
+
+
+
 
 
 Mnist Dense training without y labels and z=5,=============
@@ -17,6 +23,8 @@ Reconstruction loss 21.64 with adam 0.00004
 0.0002  -> 0.0278
 0.00004 -> 0.026297
 After RMSProp ->  0.025360
+
+
  
 Mnist Conv training with y labels and z=5,
 Reconstruction loss 23.01 with adam 0.0002
@@ -136,4 +144,31 @@ Encoder Lost 0.757511
 
 
 Next we try to see what changes when we put batch norm before relu is applied
+
+
+# SCENARIO 5
+
+LR 0.0001 
+LR 0.0002
+LR 0.0002
+
+GAN:
+DISC 0.0001
+GEN 0.0001
+
+Features just X_Image
+
+Recover from CONV
+
+# SCENARIO 6
+ADD BN ON GAN INPUT
+Features as output from first conv (No nonlinearities)
+k=8
+All lr 0.0002
+
+Scenario 7
+k=8
+lr 3x - 0.0002
+lr - 0.0001
+Not Restored, Train until gan has loss 0.69, ximage + features from 3rd layer
 

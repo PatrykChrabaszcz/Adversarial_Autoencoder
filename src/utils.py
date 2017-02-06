@@ -15,6 +15,12 @@ def conv(c_i, filter_size, stride, out_channels, name):
     return c_i
 
 
+def bn_conv(c_i, filter_size, stride, out_channels, bn_settings, name):
+    c_i = batch_norm(c_i, scope='bn_%s' % name, **bn_settings)
+    c_i = conv(c_i, filter_size, stride, out_channels, name)
+    return c_i
+
+
 def bn_lrelu_conv(c_i, filter_size, stride, out_channels, bn_settings, name):
     c_i = batch_norm(c_i, scope='bn_%s' % name, **bn_settings)
     c_i = tf.maximum(0.2 * c_i, c_i)

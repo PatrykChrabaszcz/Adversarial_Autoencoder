@@ -59,9 +59,16 @@ class AaeGanSolver:
         gan_rec_pred = model.gan(self.x_reconstructed, reuse=True)
         gan_sam_pred = model.gan(self.x_sampled, reuse=True)
 
+        # Reformulate loss in terms of L2
+        # gan_d_loss_real = tf.square(1-gan_real_pred)
+        # gan_d_loss_rec = tf.square(gan_rec_pred)
+        # gan_d_loss_sam = tf.square(gan_sam_pred)
+
+        # "Normal" loss
         gan_d_loss_real = ce_loss(gan_real_pred, tf.ones_like(gan_real_pred))
         gan_d_loss_rec = ce_loss(gan_rec_pred, tf.zeros_like(gan_rec_pred))
         gan_d_loss_sam = ce_loss(gan_sam_pred, tf.zeros_like(gan_sam_pred))
+
         gan_d_loss = 2*tf.reduce_mean(gan_d_loss_real) + tf.reduce_mean(gan_d_loss_rec)\
                      + tf.reduce_mean(gan_d_loss_sam)
         self.gan_d_loss = gan_d_loss / 4.0
@@ -72,6 +79,12 @@ class AaeGanSolver:
             minimize(self.gan_d_loss, var_list=gan_d_vars)
 
         # Gan Generator
+
+        # Reformulate loss in terms of L2
+        # gan_g_loss_rec = tf.square(1-gan_rec_pred)
+        # gan_g_loss_sam = tf.square(1-gan_sam_pred)
+
+        # "Normal" loss
         gan_g_loss_rec = ce_loss(gan_rec_pred, tf.ones_like(gan_rec_pred))
         gan_g_loss_sam = ce_loss(gan_sam_pred, tf.ones_like(gan_sam_pred))
         gan_g_loss = tf.reduce_mean(gan_g_loss_rec) + tf.reduce_mean(gan_g_loss_sam)
@@ -86,7 +99,9 @@ class AaeGanSolver:
         self.features = model.gan(self.x_image, reuse=True, features=True)
         self.features_reconstructed = model.gan(self.x_reconstructed, reuse=True, features=True)
 
-        self.rec_loss = tf.reduce_mean(tf.square(self.features - self.features_reconstructed))
+        self.rec_loss = 0
+        for i in range(len(self.features)):
+            self.rec_loss += tf.reduce_mean(tf.square(self.features[i] - self.features_reconstructed[i]))
 
         t_vars = tf.trainable_variables()
         rec_vars = [var for var in t_vars if 'dec' in var.name or 'enc' in var.name]

@@ -34,7 +34,7 @@ def plot_samples(model, data, name):
     y = []
     pred_out = []
 
-    i = 5
+    i = 50
     for batch_x, batch_y in data.iterate_minibatches(model.batch_size, shuffle=True):
         z_enc, y_enc = sess.run([solver.z_encoded, solver.y_pred_enc],
                                 feed_dict={solver.x_image: batch_x, solver.y_labels: batch_y})
@@ -79,7 +79,8 @@ def plot_samples(model, data, name):
 
 if __name__ == '__main__':
     scenario = 2
-    y_dim = 10
+    y_dim = 50
+
     if scenario == 1:
         y_dim = 10
         model = ModelDenseMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
@@ -91,16 +92,16 @@ if __name__ == '__main__':
         data = MNIST()
         plot_samples(model, data, name='Mnist_Dense_noy')
     if scenario == 3:
-        y_dim = None
+        y_dim = 10
         model = ModelConvMnist(batch_size=128, z_dim=5, y_dim=y_dim, is_training=False)
         data = MNIST()
         plot_samples(model, data, name='Mnist_Conv_y')
 
     if scenario == 4:
         y_dim = None
-        model = ModelConv32(batch_size=128, z_dim=10, y_dim=None, is_training=False)
+        model = ModelConv32(batch_size=128, z_dim=50, y_dim=None, is_training=False)
         data = CelebA()
-        plot_samples(model, data, name='Celeb_Conv_noy')
+        plot_samples(model, data, name='Gan_Celeb_Conv_4_noy_S1')
 
     if scenario == 6:
         y_dim = None

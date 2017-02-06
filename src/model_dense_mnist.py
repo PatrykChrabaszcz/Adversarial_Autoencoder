@@ -1,7 +1,7 @@
 from src.mode_base import ModelBase
 
 import tensorflow as tf
-from src.utils import lin, lin_bn_lrelu
+from src.utils import lin, lin_bn_lrelu, lin_lrelu
 
 
 class ModelDenseMnist(ModelBase):
@@ -35,6 +35,7 @@ class ModelDenseMnist(ModelBase):
             x_reconstructed = tf.nn.sigmoid(c_i)
             return x_reconstructed
 
+    # NOT TESTED !!
     def gan(self, x_image, reuse=False, features=False):
 
         with tf.variable_scope('gan') as scope:
@@ -43,8 +44,9 @@ class ModelDenseMnist(ModelBase):
             c_i = x_image
 
             c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="gan_dens_%d" % 0)
+
             if features:
-                return c_i
+                return lin(c_i, 1000, self.bn_settings, name="gan_dens_%d" % 1)
             c_i = lin_bn_lrelu(c_i, 1000, self.bn_settings, name="gan_dens_%d" % 1)
             y = lin(c_i, 1, "gan_out")
 

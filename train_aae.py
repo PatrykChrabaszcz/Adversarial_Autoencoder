@@ -5,10 +5,12 @@ from src.model_conv_mnist import ModelConvMnist
 
 from src.model_conv_32 import ModelConv32
 from src.model_subpix_32 import ModelSubpix32
+from src.model_sconv_32 import ModelSConv32
 
 from src.model_dense_cell import ModelDenseCell
+from src.model_conv_64 import ModelConv64
 
-from src.model_subpix_128 import ModelSubpix128
+from src.model_conv_128 import ModelConv128
 
 from src.datasets import MNIST, CelebA, CelebBig, Cell
 
@@ -29,14 +31,13 @@ def train(solver, data, name, restore=False, warm=False):
     sess.run(tf.global_variables_initializer())
     saver = tf.train.Saver()
 
-
     # To restore previous model
     if restore:
         print("Restoring")
         saver.restore(sess, 'models/model_%s.ckpt' % name)
 
     # Training part
-    n_epochs = 25
+    n_epochs = 20000
     for epoch in range(n_epochs):
         start_time = time.time()
 
@@ -59,18 +60,6 @@ def train(solver, data, name, restore=False, warm=False):
             if l_d < 0.95 or l_e > 0.45:
                 ops.append(solver.enc_optimizer)
 
-            # You can try to use for first epochs
-            # rec_lr: 0.01
-            # enc_lr: 0.00005
-            # enc_lr: 0.00005
-            # When reconstruction loss is low you can
-            # change it to:
-            # rec_lr: 0.00005
-            # enc_lr: 0.00005
-            # enc_lr: 0.00005
-            # It should slowly converge z distribution
-            # to prior distribution (Adjust parameters if necessary)
-
             res = sess.run(ops, feed_dict={solver.x_image: batch_x,
                                            solver.y_labels: batch_y,
                                            solver.rec_lr: 0.00005,
@@ -84,7 +73,7 @@ def train(solver, data, name, restore=False, warm=False):
             loss_enc_sum += l_e
             loss_disc_sum += l_d
 
-            if steps % 10 == 0:
+            if steps % 100 == 0:
                 print("step %d, Current loss: Rec %.4f, Disc %.4f, Enc %.4f" %
                       (steps, l_r, l_d, l_e), end='\r')
             steps += 1
@@ -96,8 +85,9 @@ def train(solver, data, name, restore=False, warm=False):
         print("Discrimination Lost %f" % (loss_disc_sum/steps))
         print("Encoder Lost %f \n" % (loss_enc_sum/steps))
 
-        saver.save(sess, 'models/model_%s.ckpt' % name)
-        print('Model saved as models/model_%s.ckpt' % name)
+        if epoch % 10 == 0:
+            saver.save(sess, 'models/model_%s.ckpt' % name)
+            print('Model saved as models/model_%s.ckpt' % name)
 
 
 # If warm true it will try to load model pretrained with
@@ -110,18 +100,19 @@ def train_gan(solver, data, name, restore=False, warm=False):
     saver = tf.train.Saver()
     if restore:
         if warm:
-            print("Restore model without gan")
+            print("\nRestore model without gan\n")
             t_vars = tf.trainable_variables()
             rec_vars = [var for var in t_vars if
                         'RMS' not in var.name and
                         'gan' not in var.name]
             saver = tf.train.Saver(rec_vars)
-            saver.restore(sess, 'models/model_%s.ckpt' % name)
+            #saver.restore(sess, 'models/model_%s.ckpt' % name)
+            saver.restore(sess, 'models/model_Celeb_Conv_4_noy.ckpt')
             # Reinit saver so it saves all variables
             saver = tf.train.Saver()
         else:
-            print("Restore model with gan")
-            saver.restore(sess, 'models/model_Gan_%s.ckpt' % name)
+            print("\nRestore model with gan\n")
+            saver.restore(sess, 'models/model_Gan_Celeb_Conv_4_noy_S1.ckpt')
 
     # Training part
     n_epochs = 2000
@@ -143,15 +134,21 @@ def train_gan(solver, data, name, restore=False, warm=False):
         l_g_g = 0.69
 
         # Pretrain gan discriminator
+        dn = False
         if epoch == 0 and warm is True:
             for batch_x, batch_y in data.iterate_minibatches(model.batch_size, shuffle=True):
+                if not dn:
+                    l_g_d = sess.run(solver.gan_d_loss,
+                                     feed_dict={solver.x_image: batch_x,
+                                                solver.y_labels: batch_y})
                 if l_g_d > 0.30:
                     l_g_d, _ = sess.run([solver.gan_d_loss, solver.gan_d_optimizer],
                                         feed_dict={solver.x_image: batch_x,
                                         solver.y_labels: batch_y,
-                                        solver.gan_d_lr: 0.0002})
+                                        solver.gan_d_lr: 0.0001})
+                    dn = True
                 else:
-                    break
+                    dn = False
 
         for batch_x, batch_y in data.iterate_minibatches(model.batch_size, shuffle=True):
             ops = [solver.rec_loss, solver.rec_optimizer, solver.disc_loss, solver.enc_loss,
@@ -165,25 +162,29 @@ def train_gan(solver, data, name, restore=False, warm=False):
                ops.append(solver.enc_optimizer)
 
             # Gan Discriminate/Generate
-            if l_g_g < 0.95 or l_g_d > 0.45:
-                ops.append(solver.gan_d_optimizer)
-
-            if l_g_d < 0.95 or l_g_g > 0.45:
-                ops.append(solver.gan_g_optimizer)
+            # if l_g_g < 0.69: #or l_g_d > 0.45:
+            ops.append(solver.gan_d_optimizer)
+            ops.append(solver.gan_g_optimizer)
 
             res = sess.run(ops, feed_dict={solver.x_image: batch_x,
                                            solver.y_labels: batch_y,
                                            solver.rec_lr: 0.0002,
-                                           solver.disc_lr: 0.00005,
-                                           solver.enc_lr: 0.00005,
-                                           solver.gan_d_lr: 0.00001,
-                                           solver.gan_g_lr: 0.00005})
+                                           solver.disc_lr: 0.0002,
+                                           solver.enc_lr: 0.0002,
+                                           solver.gan_d_lr: 0.0001,
+                                           solver.gan_g_lr: 0.0001})
 
             l_r = res[0]
             l_d = res[2]
             l_e = res[3]
             l_g_d = res[4]
             l_g_g = res[5]
+
+            while l_g_g > 0.69:
+                _, l_g_g = sess.run([solver.gan_g_optimizer, solver.gan_g_loss],
+                                    feed_dict={solver.x_image: batch_x,
+                                               solver.y_labels: batch_y,
+                                               solver.gan_g_lr: 0.0001})
 
             loss_rec_sum += l_r
             loss_enc_sum += l_e
@@ -193,7 +194,6 @@ def train_gan(solver, data, name, restore=False, warm=False):
             loss_gan_gen_sum += l_g_g
 
             if steps % 10 == 0:
-
                 print("S %d, R %.4f, D %.2f, E %.2f, Gc_D: %.2f, Gc_G: %.2f" %
                       (steps, l_r, l_d, l_e, l_g_d, l_g_g, ), end='\r')
             steps += 1
@@ -206,12 +206,12 @@ def train_gan(solver, data, name, restore=False, warm=False):
         print("GAN Discrimination Lost Ce %f" % (loss_gan_disc_sum/steps))
         print("GAN Generation Loss Ce %f \n" % (loss_gan_gen_sum/steps))
 
-        saver.save(sess, 'models/model_%s.ckpt' % name)
-        print('Model saved as models/model_%s.ckpt' % name)
+        saver.save(sess, 'models/model_Gan_%s.ckpt' % name)
+        print('Model saved as models/model_Gan_%s.ckpt' % name)
 
 
 # NOT TESTED !
-def train_wgan(solver, data, name, restore=False):
+def train_wgan(solver, data, name, restore=False, warm=False):
     # Session
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
@@ -259,26 +259,26 @@ def train_wgan(solver, data, name, restore=False):
 
             # Gan Discriminate/Generate
 
-            if epoch == 0:
+            if not epoch % 5:
                 it = 25
             else:
-                it = 2
+                it = 5
 
             for _ in range(it):
                 l_g_d, _ = sess.run([solver.gan_d_loss, solver.gan_d_optimizer],
                                     feed_dict={solver.x_image: batch_x,
                                                solver.y_labels: batch_y,
-                                               solver.gan_d_lr: 0.0002})
+                                               solver.gan_d_lr: 0.00005})
                 sess.run(solver.clip_gan_d)
 
             l_g_g, _ = sess.run([solver.gan_g_loss, solver.gan_g_optimizer],
                                 feed_dict={solver.x_image: batch_x,
                                            solver.y_labels: batch_y,
-                                           solver.gan_g_lr: 0.0002})
+                                           solver.gan_g_lr: 0.00001})
 
             res = sess.run(ops, feed_dict={solver.x_image: batch_x,
                                            solver.y_labels: batch_y,
-                                           solver.rec_lr: 0.00002,
+                                           solver.rec_lr: 0.00005,
                                            solver.disc_lr: 0.00002,
                                            solver.enc_lr: 0.00002})
 
@@ -293,7 +293,7 @@ def train_wgan(solver, data, name, restore=False):
             loss_gan_disc_sum += l_g_d
             loss_gan_gen_sum += l_g_g
 
-            if steps % 10 == 0:
+            if steps % 100 == 0:
 
                 print("S %d, R %.4f, D %.2f, E %.2f, Gc_D: %.2f, Gc_G: %.2f" %
                       (steps, l_r, l_d, l_e, l_g_d, l_g_g, ), end='\r')
@@ -307,18 +307,18 @@ def train_wgan(solver, data, name, restore=False):
         print("GAN Discrimination Lost Ce %f" % (loss_gan_disc_sum/steps))
         print("GAN Generation Loss Ce %f \n" % (loss_gan_gen_sum/steps))
 
-        saver.save(sess, 'models/model_%s.ckpt' % name)
-        print('Model saved as models/model_%s.ckpt' % name)
+        saver.save(sess, 'models/model_WGan_%s.ckpt' % name)
+        print('Model saved as models/model_WGan%s.ckpt' % name)
 
 
 if __name__ == '__main__':
-    scenario = 2
+    scenario = 6
     mnist_z_dim = 5
     celeb_z_dim = 50
-    cell_z_dim = 25
+    cell_z_dim = 50
     celebbig_z_dim = 128
 
-    gan = ''
+    gan = 'Gan'
     if gan == 'Gan':
         train_func = train_gan
         solver_class = AaeGanSolver
@@ -329,8 +329,10 @@ if __name__ == '__main__':
         train_func = train
         solver_class = AaeSolver
 
-    # MNIST++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    restore = False
+    warm = False
 
+    # MNIST++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # Mnist dense with y labels
     if scenario == 1:
         y_dim = 10
@@ -339,7 +341,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = MNIST()
         print('Training Mnist dense with y labels')
-        train_func(solver, data, name='Mnist_Dense_y', restore=False)
+        train_func(solver, data, name='Mnist_Dense_y', restore=restore, warm=False)
 
     # Mnist dense without y labels
     elif scenario == 2:
@@ -349,7 +351,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = MNIST()
         print('Training Mnist dense without y labels')
-        train_func(solver, data, name='Mnist_Dense_noy', restore=True)
+        train_func(solver, data, name='Mnist_Dense_noy', restore=restore, warm=False)
 
     # Mnist conv with y labels
     if scenario == 3:
@@ -359,7 +361,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = MNIST()
         print('Training Mnist conv with y labels')
-        train_func(solver, data, name='Mnist_Conv_y', restore=False, warm=False)
+        train_func(solver, data, name='Mnist_Conv_y', restore=restore, warm=False)
 
     # Mnist conv without y labels
     elif scenario == 4:
@@ -369,7 +371,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = MNIST()
         print('Training Mnist conv without y labels')
-        train_func(solver, data, name='Mnist_Conv_noy', restore=True, warm=True)
+        train_func(solver, data, name='Mnist_Conv_noy', restore=restore, warm=False)
 
     # CELEB++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -381,7 +383,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = CelebA()
         print('Training Celeb conv with y labels')
-        train_func(solver, data, name='Celeb_Conv_y', restore=True)
+        train_func(solver, data, name='Celeb_Conv_y', restore=restore)
 
     # Celeb convolution without y labels
     elif scenario == 6:
@@ -391,7 +393,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = CelebA()
         print('Training Celeb conv without y labels')
-        train_func(solver, data, name='Celeb_Conv_noy', restore=True)
+        train_func(solver, data, name='Celeb_Conv_4_noy_S1', restore=restore, warm=warm)
 
     # Celeb subpix with y labels
     elif scenario == 7:
@@ -401,7 +403,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = CelebA()
         print('Training Celeb Subpix with y labels')
-        train_func(solver, data, name='Celeb_Subpix_y', restore=False)
+        train_func(solver, data, name='Celeb_Subpix_y', restore=restore)
 
     # Celeb subpix without y labels
     elif scenario == 8:
@@ -410,38 +412,67 @@ if __name__ == '__main__':
         solver = solver_class(model=model)
         print("Number of parameters in model %d" % count_params())
         data = CelebA()
-        print('Training Celeb %sSubpix without y labels')
-        train_func(solver, data, name='Celeb_%sSubpix', restore=True)
+        print('Training Celeb Subpix_4 without y labels')
+        train_func(solver, data, name='Celeb_Subpix_4_noy', restore=restore, warm=False)
+
+    # Celeb sconv with y labels
+    elif scenario == 9:
+        y_dim = 40
+        model = ModelSConv32(batch_size=128, z_dim=celeb_z_dim, y_dim=y_dim)
+        solver = solver_class(model=model)
+        print("Number of parameters in model %d" % count_params())
+        data = CelebA()
+        print('Training Celeb SConv with y labels')
+        train_func(solver, data, name='Celeb_SConv_y', restore=restore)
+
+    # Celeb sconv without y labels
+    elif scenario == 10:
+        y_dim = None
+        model = ModelSConv32(batch_size=128, z_dim=celeb_z_dim, y_dim=y_dim)
+        solver = solver_class(model=model)
+        print("Number of parameters in model %d" % count_params())
+        data = CelebA()
+        print('Training Celeb Subpix_4 without y labels')
+        train_func(solver, data, name='Celeb_SConv_noy', restore=restore, warm=False)
 
     # CELEB_BIG++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    # CelebBig Subpix with y labels
-    elif scenario == 7:
+    # CelebBig with y labels
+    elif scenario == 11:
         y_dim = 40
-        model = ModelSubpix128(batch_size=32, z_dim=celebbig_z_dim, y_dim=y_dim)
+        model = ModelConv128(batch_size=32, z_dim=celebbig_z_dim, y_dim=y_dim)
         solver = solver_class(model=model)
         print("Number of parameters in model %d" % count_params())
         data = CelebBig()
-        print('Training Subpix128 without y labels')
-        train_func(solver, data, name='CelebBig_Subpix_y', restore=False)
+        print('Training 128 with y labels')
+        train_func(solver, data, name='CelebBig_Subpix_y', restore=restore)
 
-    # CelebBig Subpix without y labels
-    elif scenario == 8:
+    # CelebBig without y labels
+    elif scenario == 12:
         y_dim = None
-        model = ModelSubpix128(batch_size=64, z_dim=celebbig_z_dim, y_dim=y_dim)
+        model = ModelConv128(batch_size=64, z_dim=celebbig_z_dim, y_dim=y_dim)
         solver = solver_class(model=model)
         print("Number of parameters in model %d" % count_params())
         data = CelebBig()
-        print('Training %sSubpix128 without y labels')
-        train_func(solver, data, name='%sCelebBig_Subpix_noy', restore=False)
+        print('Training 128 without y labels')
+        train_func(solver, data, name='CelebBig_noy', restore=restore)
 
     # CELL +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    elif scenario == 12:
+    elif scenario == 14:
         y_dim = None
         model = ModelDenseCell(batch_size=128, z_dim=cell_z_dim, y_dim=y_dim)
         solver = solver_class(model=model)
         print("Number of parameters in model %d" % count_params())
         data = Cell()
         print('Training Cell Dense without y labels')
-        train_func(solver, data, name='Cell_Dense_noy', restore=False)
+        train_func(solver, data, name='Cell_Dense_noy', restore=restore)
+
+    elif scenario == 16:
+        y_dim = None
+        model = ModelConv64(batch_size=128, z_dim=cell_z_dim, channels=1, y_dim=y_dim)
+        solver = solver_class(model=model)
+        print("Number of parameters in model %d" % count_params())
+        data = Cell()
+        print('Training Cell Dense without y labels')
+        train_func(solver, data, name='Cell_Conv_noy', restore=restore)

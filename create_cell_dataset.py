@@ -27,6 +27,7 @@ numbers = [
 data_path = '/mhome/chrabasp/Download/VAE/VAE'
 # Read images
 
+
 def main():
     # Original images
     x = []
@@ -43,7 +44,6 @@ def main():
                 x.append(image.reshape([1, 4096]))
                 x_rec.append(image_masked.reshape([1, 4096]))
 
-
     x = np.concatenate(x)
     x_rec = np.concatenate(x_rec)
 
@@ -52,5 +52,4 @@ def main():
 
 
 if __name__ == '__main__':
-
     main()

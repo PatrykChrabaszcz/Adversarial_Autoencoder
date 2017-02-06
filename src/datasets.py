@@ -11,20 +11,19 @@ cell_path = 'CELL'
 class Cell:
 
     def __init__(self):
-        self.train_images = np.uint8(np.load(os.path.join(cell_path, 'cell_x.npy')))/256.
+        self.train_images = np.uint8(np.load(os.path.join(cell_path, 'cell_x_masked.npy')))/256.
         #self.train_rec = np.uint8(np.load(os.path.join(cell_path, 'cell_x_masked.npy')))/256.
         self.train_labels = np.array([[0]] * self.train_images.shape[0])
         self.name = 'Cell'
 
     def sample_image(self):
         i = np.random.randint(0, self.train_images.shape[0])
-        img = self.train_images[i]
-
-        y = [0]
+        img = np.reshape(self.train_images[i], [1, 4096])
+        y = np.reshape(0, [1, 1])
         return img, y
 
     def sample_y(self):
-        return [0]
+        return np.reshape(0, [1, 1])
 
     def transform2display(self, image):
         image = np.resize(image, [64, 64])
@@ -151,7 +150,6 @@ class CelebA:
     @staticmethod
     def transform2display(image):
         image = (np.reshape(image, [32, 32, 3]) + 1) / 2.0
-        image.clip(0, 1.0)
         return image
 
     @staticmethod
@@ -159,7 +157,6 @@ class CelebA:
         if alpha:
             image = image[:, :, :3]
         return np.reshape(image, [1, 32, 32, 3])
-
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):
         if test:
