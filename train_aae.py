@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from src.model_dense_mnist import ModelDenseMnist
 from src.model_conv_mnist import ModelConvMnist
+from src.model_compare_mnist import ModelCompareMnist
 
 from src.model_conv_32 import ModelConv32
 from src.model_subpix_32 import ModelSubpix32
@@ -312,13 +313,13 @@ def train_wgan(solver, data, name, restore=False, warm=False):
 
 
 if __name__ == '__main__':
-    scenario = 6
-    mnist_z_dim = 5
+    scenario = 18
+    mnist_z_dim = 2
     celeb_z_dim = 50
     cell_z_dim = 50
     celebbig_z_dim = 128
 
-    gan = 'Gan'
+    gan = ''
     if gan == 'Gan':
         train_func = train_gan
         solver_class = AaeGanSolver
@@ -351,7 +352,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = MNIST()
         print('Training Mnist dense without y labels')
-        train_func(solver, data, name='Mnist_Dense_noy', restore=restore, warm=False)
+        train_func(solver, data, name='Mnist_Dense_2_noy', restore=restore, warm=False)
 
     # Mnist conv with y labels
     if scenario == 3:
@@ -476,3 +477,14 @@ if __name__ == '__main__':
         data = Cell()
         print('Training Cell Dense without y labels')
         train_func(solver, data, name='Cell_Conv_noy', restore=restore)
+
+    # Mnist with the same architecture as group that was making VAE++++++++++++++++++++++++++++++++++++++++
+
+    elif scenario == 18:
+        y_dim = None
+        model = ModelCompareMnist(batch_size=128, z_dim=2, y_dim=y_dim)
+        solver = solver_class(model=model)
+        print("Number of parameters in model %d" % count_params())
+        data = MNIST()
+        print('Training Cell Dense without y labels')
+        train_func(solver, data, name='Mnist_compare', restore=restore)

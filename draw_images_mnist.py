@@ -3,6 +3,7 @@ from tensorflow.python.framework import ops
 
 from src.model_dense_mnist import ModelDenseMnist
 from src.model_conv_mnist import ModelConvMnist
+from src.model_compare_mnist import ModelCompareMnist
 from src.aae_solver import AaeSolver
 from src.aae_gan_solver import AaeGanSolver
 from src.aae_wgan_solver import AaeWGanSolver
@@ -275,4 +276,17 @@ if __name__ == '__main__':
         compare_style(model, name, '', False)
         ops.reset_default_graph()
         model = ModelDenseMnist(batch_size=20, z_dim=5, y_dim=y_dim, is_training=False)
+        draw_reconstruction(model, name, gan='')
+
+    if scenario == 4:
+        print("Draw Mnist from compare network")
+        y_dim = None
+        name = 'Mnist_compare'
+        model = ModelDenseMnist(batch_size=samples ** 4 * frames, z_dim=2, y_dim=y_dim, is_training=False)
+        manifold_images(model, name, '', False)
+        ops.reset_default_graph()
+        model = ModelDenseMnist(batch_size=91, z_dim=2, y_dim=y_dim, is_training=False)
+        compare_style(model, name, '', False)
+        ops.reset_default_graph()
+        model = ModelDenseMnist(batch_size=20, z_dim=2, y_dim=y_dim, is_training=False)
         draw_reconstruction(model, name, gan='')

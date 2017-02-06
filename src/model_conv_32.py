@@ -12,7 +12,7 @@ class ModelConv32(ModelBase):
         self.channels = channels
         self.x_image = tf.placeholder(tf.float32, [batch_size, 32, 32, self.channels], name='x_image')
 
-        self.k = 4
+        self.k = 8
 
     def encoder(self):
         c_i = self.x_image
@@ -75,17 +75,23 @@ class ModelConv32(ModelBase):
                 scope.reuse_variables()
             c_i = x_image
             # Now c_i has shape batch_size x 32 x 32 x self.channels
+
             c_i = conv(c_i, 3, 1, 16*self.k, name="gan_conv_1")
             # Now c_i has shape batch_size x 32 x 32 x 16*k
+
             f.append(c_i)
+
             c_i = lrelu_conv(c_i, 4, 2, 32 * self.k, name="gan_conv_2")
             # Now c_i has shape batch_size x 16 x 16 x 128*k
 
             c_i = bn_lrelu_conv(c_i, 4, 2, 64 * self.k, self.bn_settings, name="gan_conv_3")
             # c_i shape is batch_size x 8 x 8 x 256*k
+
             f.append(c_i)
+
             if features:
                 return f
+
             c_i = bn_lrelu_conv(c_i, 4, 2, 128 * self.k, self.bn_settings, name="gan_conv_4")
             # c_i shape is batch_size x 4 x 4 x 512*k
 

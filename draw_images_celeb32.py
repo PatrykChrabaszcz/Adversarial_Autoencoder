@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
     if scenario == 3:
         name = 'Celeb_Conv_4_noy_S1_b'
-        # name = 'Celeb_Conv_8_noy_S7'
+        name = 'Celeb_Conv_8_noy_S6'
         model = ModelConv32(batch_size=frames * celeb_z_dim, z_dim=celeb_z_dim, y_dim=None, is_training=False)
         draw_images(model, name=name, systematic=True, gan='Gan')
         ops.reset_default_graph()
