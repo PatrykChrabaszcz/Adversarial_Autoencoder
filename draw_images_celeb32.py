@@ -154,7 +154,7 @@ def draw_reconstruction(model, name, gan):
 # It's bad solution but works for now
 # For higher 'samples' and 'frames' value it needs a lot of GPU memory.
 if __name__ == '__main__':
-    scenario = 3
+    scenario = 1
     celeb_z_dim = 50
 
     if scenario == 1:

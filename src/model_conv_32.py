@@ -12,7 +12,7 @@ class ModelConv32(ModelBase):
         self.channels = channels
         self.x_image = tf.placeholder(tf.float32, [batch_size, 32, 32, self.channels], name='x_image')
 
-        self.k = 8
+        self.k = 4
 
     def encoder(self):
         c_i = self.x_image

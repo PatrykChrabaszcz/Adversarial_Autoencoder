@@ -19,7 +19,7 @@ import os
 samples = 5
 
 # Number of frames in animation
-frames = 10
+frames = 20
 
 
 def manifold_images(model, name, gan, y=False):
@@ -99,9 +99,9 @@ def manifold_images(model, name, gan, y=False):
             ap = APNG()
             # Create animated png
             for file in files:
-                ap.append(file, delay=50)
+                ap.append(file, delay=100)
             for file in files[::-1]:
-                ap.append(file, delay=50)
+                ap.append(file, delay=100)
             if not os.path.exists('output/z_%d' % z_i):
                 os.makedirs('output/z_%d' % z_i)
 
@@ -179,7 +179,7 @@ def compare_style(model, name, gan, y=False):
         files.append(file)
     # Create animated png
     for file in files:
-        ap.append(file, delay=100)
+        ap.append(file, delay=200)
 
     ap.save("output/style/%s.apng" % name)
 
@@ -237,7 +237,7 @@ def draw_reconstruction(model, name, gan):
 # For higher 'samples' and 'frames' value it needs a lot of GPU memory.
 # TODO: Fix all functions so that they can use model with smaller batch size
 if __name__ == '__main__':
-    scenario = 3
+    scenario = 1
 
     if scenario == 1:
         print("Draw Mnist Conv Gan y")

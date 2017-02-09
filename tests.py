@@ -1,26 +1,9 @@
 import numpy as np
+y = [1,2, 5, 3 ,4 ,5, 6]
 
-from itertools import product
+train_indices = np.arange(len(y))
+np.random.shuffle(train_indices)
 
-samples = 2
-frames = 3
-# Generate grid of z
-r = 1.75
-ls = np.linspace(-r, r, samples)
-lf = np.linspace(-2, 2, frames)
-z = np.array(list(product(lf, ls, ls, ls, ls)))
+print(train_indices)
 
-print(z)
-
-z=[]
-for z_4 in np.linspace(-2, 2, frames):
-    for z_3 in np.linspace(-r, r, samples):
-        for z_2 in np.linspace(-r, r, samples):
-            for z_1 in np.linspace(-r, r, samples):
-                for z_0 in np.linspace(-r, r, samples):
-                    z.append([z_0, z_1, z_2, z_3, z_4])
-
-z = np.array(z)
-z.reshape([-1, 5])
-
-print(z)
+print(np.array(y)[train_indices].tolist())

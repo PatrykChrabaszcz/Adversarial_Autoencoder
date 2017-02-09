@@ -313,13 +313,17 @@ def train_wgan(solver, data, name, restore=False, warm=False):
 
 
 if __name__ == '__main__':
-    scenario = 18
-    mnist_z_dim = 2
+    scenario = 1
+    mnist_z_dim = 5
     celeb_z_dim = 50
     cell_z_dim = 50
     celebbig_z_dim = 128
 
-    gan = ''
+    # Choose
+    gan = ''        # Normal pixel matching AAE
+    # gan = 'Gan'    # Feature matching AAE using Gan network
+    # gan = 'WGan'   # Feature matching AAE using WGan (Wasserstein GAN) network untested!
+
     if gan == 'Gan':
         train_func = train_gan
         solver_class = AaeGanSolver
@@ -330,6 +334,9 @@ if __name__ == '__main__':
         train_func = train
         solver_class = AaeSolver
 
+    # If restore then start training from latest saved point
+    # But if warm and feature matching is selected then restore last saved
+    # point from pixel matching training
     restore = False
     warm = False
 
@@ -384,7 +391,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = CelebA()
         print('Training Celeb conv with y labels')
-        train_func(solver, data, name='Celeb_Conv_y', restore=restore)
+        train_func(solver, data, name='Celeb_Conv_4_y', restore=restore)
 
     # Celeb convolution without y labels
     elif scenario == 6:
@@ -404,7 +411,7 @@ if __name__ == '__main__':
         print("Number of parameters in model %d" % count_params())
         data = CelebA()
         print('Training Celeb Subpix with y labels')
-        train_func(solver, data, name='Celeb_Subpix_y', restore=restore)
+        train_func(solver, data, name='Celeb_Subpix_4_y', restore=restore)
 
     # Celeb subpix without y labels
     elif scenario == 8:
@@ -478,7 +485,7 @@ if __name__ == '__main__':
         print('Training Cell Dense without y labels')
         train_func(solver, data, name='Cell_Conv_noy', restore=restore)
 
-    # Mnist with the same architecture as group that was making VAE++++++++++++++++++++++++++++++++++++++++
+    # Mnist with the same architecture as the other group that was making VAE+++++++++++++++++++++++++++++
 
     elif scenario == 18:
         y_dim = None

@@ -25,11 +25,13 @@ class Cell:
     def sample_y(self):
         return np.reshape(0, [1, 1])
 
-    def transform2display(self, image):
+    @staticmethod
+    def transform2display(image):
         image = np.resize(image, [64, 64])
         return image
 
-    def transform2data(self, image):
+    @staticmethod
+    def transform2data(image):
         return np.resize(image, [1, 4096])
 
     def iterate_minibatches(self, batchsize, shuffle=False, test=False):
@@ -87,12 +89,14 @@ class CelebBig:
     def sample_y(self):
         return np.array([0 for i in range(40)]).reshape([1, 40])
 
-    def transform2display(self, image):
+    @staticmethod
+    def transform2display(image):
         image = (np.reshape(image, [128, 128, 3]) + 1) / 2.0
         image.clip(0, 1.0)
         return image
 
-    def transform2data(self, image, alpha=False):
+    @staticmethod
+    def transform2data(image, alpha=False):
         if alpha:
             image = image[:, :, :3]
         return np.reshape(image, [1, 128, 128, 3])

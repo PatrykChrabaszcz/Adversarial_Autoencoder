@@ -55,15 +55,12 @@ class Window(QWidget):
                                 'models/model_Celeb_Conv_4_noy.ckpt',
                                 'models/model_Celeb_Subpix_4_noy.ckpt',
 
-                                'models/model_Gan_Celeb_Subpix_4_noy.ckpt',
-                                'models/model_Gan_Celeb_Conv_4_noy.ckpt',
+                                'models/model_Gan_Celeb_Conv_4_noy_S1.ckpt',
 
                                 'models/model_Gan_Celeb_Conv_4_noy_new.ckpt',
 
                                 'models/model_CelebBig_noy.ckpt',
                                 'models/model_Cell_Conv_noy.ckpt',
-
-                                'models/model_Gan_Celeb_Conv_4_noy_S1.ckpt'
                                 ])
         self._l_start.addWidget(self.cb_model)
 
