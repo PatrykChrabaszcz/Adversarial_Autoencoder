@@ -8,6 +8,8 @@ Source code :
         aae_**_solver.py - Classes that implement different training procedures. Pixel Matching AAE, Feature matching
         AAE using GAN network  
         utils.py - Functions providing higher level abstraction over pure tensorflow ops.  
+        
+        
     train_aae.py - Training procedure with different scenarios  
     interface.py - Little GUI program, used for sampling from models and traversing latent space  
     draw_samples.py - Visualize samples from input encoded into latent representation  
