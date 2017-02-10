@@ -21,6 +21,6 @@ Source code :
    Models and Images:
    https://drive.google.com/drive/folders/0B2ZqB_V870aATHF5UmVrR1VCZGc?usp=sharing
    
-   Note:
-   Mnist dataset will be downloaded automatically
+   Note:  
+   Mnist dataset will be downloaded automatically  
    Celeb dataset has to be added manually to the CELEB folder
