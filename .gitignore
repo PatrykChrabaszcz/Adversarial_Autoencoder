@@ -10,15 +10,16 @@ train.py_*
 y*
 z*
 MNIST/*
+!MNIST/.gitkeep 
 CELEB/*
+!CELEB/.gitkeep 
 models/*
+!models/.gitkeep
 checkpoint*
 x*
 y.npy
 z.npy
-models/*
-MNIST/*
-CELEB/*
+
 CELEB_BIG/*
 *___jb_old___
 
